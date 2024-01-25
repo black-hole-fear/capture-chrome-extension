@@ -1,0 +1,73 @@
+{
+	"name": "Selection Saver",
+	"description": "Testing Version",
+	"version": "4.4",
+	"manifest_version": 3,
+	"background": {
+		"service_worker": "background.js"
+	},
+	"content_scripts": [
+		{
+			"js": [
+				"lib/jquery.js",
+				"lib/jquery-ui.js",
+				"lib/color-picker.js",
+				"capture-page.js"
+			],
+			"matches": [
+				"http://*/*",
+				"https://*/*"
+			]
+		},
+		{
+			"matches": [
+				"<all_urls>"
+			],
+			"js": [
+				"x.js",
+				"content.js"
+			],
+			"run_at": "document_start"
+		}
+	],
+	"permissions": [
+		"storage",
+		"unlimitedStorage",
+		"activeTab",
+		"scripting",
+		"tabCapture",
+		"tabs"
+	],
+	"action": {
+		"default_popup": "popup.html",
+		"default_popup_options": {
+			"width": 300,
+			"height": 200,
+			"top": 100,
+			"left": 100
+		},
+		"default_icon": {
+			"16": "/images/yourarchive_logo.png",
+			"32": "/images/yourarchive_logo.png",
+			"48": "/images/yourarchive_logo.png",
+			"128": "/images/yourarchive_logo.png"
+		}
+	},
+	"icons": {
+		"16": "/images/yourarchive_logo.png",
+		"32": "/images/yourarchive_logo.png",
+		"48": "/images/yourarchive_logo.png",
+		"128": "/images/yourarchive_logo.png"
+	},
+	"options_page": "options.html",
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"inject.js"
+			],
+			"matches": [
+				"<all_urls>"
+			]
+		}
+	]
+}
