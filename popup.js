@@ -26,7 +26,9 @@ var audioData = [];
 var duration = 0;
 var recordings = [];
 var durations = [];
-var stashrecordings = []
+var stashrecordings = [];
+
+var comments = [];
 
 var selectedAudoiIndex;
 // https://www.ta3.com/clanok/241096/potrebujeme-posilnit-timy-na-chirurgii-a-traumatologii-hovori-sefka-spisskonovoveskej-nemocnice
@@ -86,9 +88,6 @@ async function OnLoad() {
 		var description = await SessionData?.get("recordingDescription");
 		durations = await SessionData?.get("durations");
 
-		console.log(durations);
-
-
 		if (description) $("#txtAudioDescription").val(description);
 		// console.log("this is what i want", durations)
 		for (var [index, recording] of savedRecordings.entries()) {
@@ -97,10 +96,9 @@ async function OnLoad() {
 
 			recordings?.push(recording);
 
-			let comments = localStorage?.getItem("comments") ? JSON.parse(localStorage.getItem("comments")) : []
+			comments = await SessionData?.get("comments") ? JSON.parse(SessionData.get("comments")) : [];
 
-
-			const element = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
+			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
 			// console.log("this is element", element, index);
 
 			// Calculate minutes and seconds
@@ -115,17 +113,21 @@ async function OnLoad() {
 				for (let i = 0; i < text.length; i += maxLength) {
 					lines.push(text.substr(i, maxLength));
 				}
-				return lines.join(' ');
+				return lines;
 			}
 
 			// Maximum length for each line of the comment text
 			const maxCommentLineLength = 40;
 
 			// Break comment text into lines
-			const formattedComment = breakTextIntoLines(element, maxCommentLineLength);
-
-			var recordedAudio = $(`<option style="text-wrap: wrap;">${index + 1}&nbsp;&nbsp;(${formattedDuration}) <br> : ${formattedComment} <div class="comment-text" style="display: none;"></div> </option>`);
-
+			const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+			var recordedAudio = $(`
+				<option style="text-wrap: wrap;">
+					${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+					: ${formattedComment}
+					<div class="comment-text" style="display: none;"></div>
+				</option>`
+			);
 			$("#slcRecordings").append(recordedAudio);
 
 			$("#btnUploadAudio").removeClass("disabled");
@@ -136,9 +138,6 @@ async function OnLoad() {
 
 	console.log("it is unsaved", unsavedRecording);
 	stashrecordings = await SessionData.get("stashrecordings") || [];
-	console.log("stash recording", stashrecordings)
-
-	console.log("durations data", durations);
 
 	if (unsavedRecording || stashrecordings?.length > 0) {
 
@@ -164,7 +163,7 @@ async function OnLoad() {
 		// audioData = []
 		duration = durations[index - 1] || 0;
 
-		console.log(duration);
+		console.log("duration: ", duration);
 
 		if (unsavedRecording !== false && unsavedRecording?.length > 0) {
 			stashrecordings.push(unsavedRecording);
@@ -172,7 +171,6 @@ async function OnLoad() {
 		await SessionData?.set("stashrecordings", stashrecordings);
 
 		console.log(stashrecordings);
-
 
 		// $("#btnPause").addClass("disabled");
 		// $("#btnRecord").removeClass("disabled");
@@ -343,7 +341,6 @@ $(document).ready(function () {
 		}
 	});
 
-
 	$("#slcRecordings").on("change", function () {
 		selectedAudoiIndex = $(this).prop("selectedIndex");
 
@@ -472,7 +469,7 @@ var recordTime = 0
 const MIN_BLOB_SIZE = 5000000;
 var partSize = 0;
 var parts = [];
-var comments = localStorage.getItem("comments") ? JSON.parse(localStorage.getItem("comments")) : [];
+var comments = [];
 var recordings = [];
 
 
@@ -507,8 +504,8 @@ async function Record() {
 	if (stashrecordings?.length === 0) {
 		newrecorderonexit = true;
 		durations.push(0);
-		comments.push("");
-		localStorage.setItem("comments", JSON.stringify(comments))
+		comments.push(" ");
+		await SessionData.set("comments", JSON.stringify(comments))
 		await SessionData.set("durations", durations);
 	}
 
@@ -528,18 +525,16 @@ async function Record() {
 				durations.pop();
 				await SessionData.set("durations", durations);
 				// await SessionData.set("durations", durations);
-				let comments = localStorage.getItem("comments") ? JSON.parse(localStorage.getItem("comments")) : [];
-				if (comments.length > 0) comments.pop();
-				localStorage.setItem("comments", JSON.stringify(comments));
+				let comments = SessionData.get("comments") ? JSON.parse(SessionData.get("comments")) : [];
+				// if (comments.length > 0) comments.pop();
+				await SessionData.set("comments", JSON.stringify(comments));
 			}
-
 
 			$("#btnPause, #btnStop, #btnMark").addClass("disabled");
 			$("#slcMarks").html("");
 			$("#btnRecord").removeClass("disabled");
 			if (newrecorderonexit) $("#lblRecordTime").text("00:00:00");
 			$("#record-animation2").removeClass("play");
-
 
 			alert("No tab is selected, Once select the tab.");
 			return;
@@ -603,7 +598,7 @@ async function Record() {
 			await SessionData?.set("recordings", recordings);
 			await SessionData?.set("durations", durations);
 
-			stashrecordings = []
+			stashrecordings = [];
 			await SessionData?.set("stashrecordings", stashrecordings);
 
 			// console.log("I am stoppping it");
@@ -634,8 +629,6 @@ async function Record() {
 
 			// Break comment text into lines
 			const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
-
-
 			// ${c && c ? c : formattedDuration}
 
 			var audio = $(`
@@ -686,7 +679,7 @@ async function deleteAudio() {
 
 	await SessionData.set("durations", durations);
 	localStorage.setItem("recordings", JSON.stringify(recordings));
-	localStorage.setItem("comments", JSON.stringify(comments));
+	await SessionData.set("comments", JSON.stringify(comments));
 
 	$("#slcRecordings option").eq(audioIndex).remove();
 
@@ -720,7 +713,7 @@ async function editComment() {
 		return;
 	}
 
-	var commentText = comments[commentIndex]
+	var commentText = comments[commentIndex];
 	var editedCommentText = prompt("Edit the comment:", commentText);
 	// var editedCommentText = prompt("Edit the comment:", commentText);
 	if (editedCommentText !== null) {
@@ -728,7 +721,7 @@ async function editComment() {
 		commentContainer.find(".comment-text").text(editedCommentText);
 		comments[commentIndex] = editedCommentText;
 
-		localStorage.setItem("comments", JSON.stringify(comments));
+		await SessionData.set("comments", JSON.stringify(comments));
 
 		const selectedTab = localStorage.getItem("tab");
 
@@ -781,8 +774,6 @@ async function Stop() {
 
 	clearInterval(recordTimer);
 
-
-
 	if (!recorder) {
 		recorderonstopnull();
 	}
@@ -791,7 +782,6 @@ async function Stop() {
 		await recorder.stop();
 		localStorage.removeItem('pauseRecorderTime');
 	}
-	// console.log('recorder.state', recorder.state);
 	else if (recorder?.state === "paused") {
 		await recorder.requestData();
 		await recorder.stop();
@@ -800,10 +790,12 @@ async function Stop() {
 
 	var comment = prompt("Please enter a comment for the recording:");
 
-	comments[comments.length - 1] = comment;
-
+	// comments[comments.length - 1] = comment;
+	comments.push(comment);
+	console.log("Stop audio recording: ", comment);
+	console.log("comments print:", comments);
 	// Save the comments to localStorage
-	localStorage.setItem("comments", JSON.stringify(comments));
+	await SessionData.set("comments", JSON.stringify(comments));
 	localStorage.setItem("durations", JSON.stringify(durations));
 	localStorage.setItem("recordings", JSON.stringify(recordings));
 }
@@ -963,11 +955,9 @@ async function UploadAudio() {
 			stashrecordings = []
 
 			localStorage.removeItem("comments");
+			sessionStorage.removeItem("comments");
 			localStorage.removeItem("recordings");
 			localStorage.removeItem("durations");
-
-
-			console.log("hello");
 
 			// Reset the audio element's "muted" attribute
 			const audioElement = document.getElementById("yourAudioElementId");

@@ -4,8 +4,7 @@
 	"version": "4.4",
 	"manifest_version": 3,
 	"background": {
-		"service_worker": "background.js",
-		"persistent": true
+		"service_worker": "background.js"
 	},
 	"content_scripts": [
 		{
