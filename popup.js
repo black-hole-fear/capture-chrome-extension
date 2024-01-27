@@ -81,7 +81,6 @@ async function OnLoad() {
 	// recordings
 
 	var savedRecordings = await SessionData?.get("recordings");
-	console.log("it is saved", savedRecordings);
 
 	if (savedRecordings && savedRecordings?.length > 0) {
 
@@ -89,17 +88,14 @@ async function OnLoad() {
 		durations = await SessionData?.get("durations");
 
 		if (description) $("#txtAudioDescription").val(description);
-		// console.log("this is what i want", durations)
 		for (var [index, recording] of savedRecordings.entries()) {
 			// var blob = await (await fetch(recording)).blob();
-			console.log('recording>>>>>', recording);
 
 			recordings?.push(recording);
-
-			comments = await SessionData?.get("comments") ? JSON.parse(SessionData.get("comments")) : [];
+			console.log("Session Data; ", await SessionData?.get("comments"));
+			comments = await SessionData?.get("comments") ? await SessionData?.get("comments") : [];
 
 			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
-			// console.log("this is element", element, index);
 
 			// Calculate minutes and seconds
 			var minutes = Math.floor(durations[index] / 60);
@@ -109,9 +105,9 @@ async function OnLoad() {
 			var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
 			function breakTextIntoLines(text, maxLength) {
-				const lines = [];
+				let lines = "";
 				for (let i = 0; i < text.length; i += maxLength) {
-					lines.push(text.substr(i, maxLength));
+					lines += text.substr(i, maxLength);
 				}
 				return lines;
 			}
@@ -136,7 +132,6 @@ async function OnLoad() {
 
 	var unsavedRecording = await SessionData?.get("recording");
 
-	console.log("it is unsaved", unsavedRecording);
 	stashrecordings = await SessionData.get("stashrecordings") || [];
 
 	if (unsavedRecording || stashrecordings?.length > 0) {
@@ -169,8 +164,6 @@ async function OnLoad() {
 			stashrecordings.push(unsavedRecording);
 		}
 		await SessionData?.set("stashrecordings", stashrecordings);
-
-		console.log(stashrecordings);
 
 		// $("#btnPause").addClass("disabled");
 		// $("#btnRecord").removeClass("disabled");
@@ -504,8 +497,7 @@ async function Record() {
 	if (stashrecordings?.length === 0) {
 		newrecorderonexit = true;
 		durations.push(0);
-		comments.push(" ");
-		await SessionData.set("comments", JSON.stringify(comments))
+		await SessionData?.set("comments", comments)
 		await SessionData.set("durations", durations);
 	}
 
@@ -517,7 +509,6 @@ async function Record() {
 			var newStream = context.createMediaStreamSource(stream);
 			newStream.connect(context.destination);
 			recorder = new MediaRecorder(stream);
-			console.log(recorder)
 		} catch (err) {
 			// if(!newrecorderonexit) return
 
@@ -525,9 +516,9 @@ async function Record() {
 				durations.pop();
 				await SessionData.set("durations", durations);
 				// await SessionData.set("durations", durations);
-				let comments = SessionData.get("comments") ? JSON.parse(SessionData.get("comments")) : [];
+				let comments = await SessionData?.get("comments") ? JSON.parse(SessionData?.get("comments")) : [];
 				// if (comments.length > 0) comments.pop();
-				await SessionData.set("comments", JSON.stringify(comments));
+				await SessionData?.set("comments", comments);
 			}
 
 			$("#btnPause, #btnStop, #btnMark").addClass("disabled");
@@ -617,11 +608,11 @@ async function Record() {
 			var comment = comments[comments.length - 1];
 
 			function breakTextIntoLines(text, maxLength) {
-				const lines = [];
+				let lines = "";
 				for (let i = 0; i < text.length; i += maxLength) {
-					lines.push(text.substr(i, maxLength));
+					lines += text.substr(i, maxLength);
 				}
-				return lines.join(' ');
+				return lines;
 			}
 
 			// Maximum length for each line of the comment text
@@ -677,9 +668,9 @@ async function deleteAudio() {
 	comments.splice(audioIndex, 1);
 	durations.splice(audioIndex, 1);
 
-	await SessionData.set("durations", durations);
-	localStorage.setItem("recordings", JSON.stringify(recordings));
-	await SessionData.set("comments", JSON.stringify(comments));
+	await SessionData?.set("durations", durations);
+	await SessionData?.set("recordings", recordings);
+	await SessionData?.set("comments", comments);
 
 	$("#slcRecordings option").eq(audioIndex).remove();
 
@@ -693,7 +684,7 @@ async function deleteAudio() {
 		$("#btnUploadAudio").addClass("disabled");
 	}
 
-	await SessionData.removeData('recordings');
+	await SessionData?.removeData('recordings');
 	const updateRecord = await SessionData.get('recordings')
 	updateRecord.splice(audioIndex, 1);
 
@@ -701,7 +692,7 @@ async function deleteAudio() {
 	$("#editButton").addClass("disabled");
 	$("#deleteButton").addClass("disabled");
 
-	await SessionData.set('recordings', updateRecord)
+	await SessionData?.set('recordings', updateRecord)
 }
 
 
@@ -721,7 +712,7 @@ async function editComment() {
 		commentContainer.find(".comment-text").text(editedCommentText);
 		comments[commentIndex] = editedCommentText;
 
-		await SessionData.set("comments", JSON.stringify(comments));
+		await SessionData?.set("comments", comments);
 
 		const selectedTab = localStorage.getItem("tab");
 
@@ -795,9 +786,9 @@ async function Stop() {
 	console.log("Stop audio recording: ", comment);
 	console.log("comments print:", comments);
 	// Save the comments to localStorage
-	await SessionData.set("comments", JSON.stringify(comments));
-	localStorage.setItem("durations", JSON.stringify(durations));
-	localStorage.setItem("recordings", JSON.stringify(recordings));
+	await SessionData?.set("comments", comments);
+	await SessionData?.set("durations", durations);
+	await SessionData?.set("recordings", recordings);
 }
 
 function SelectAudio() {
@@ -819,7 +810,7 @@ async function Pause() {
 
 		durations[durations.length - 1] = duration || 0;
 
-		await SessionData.set("durations", durations);
+		await SessionData?.set("durations", durations);
 
 		clearInterval(recordTimer)
 
@@ -853,7 +844,7 @@ function blobToBase64(blob) {
 async function saveToFile(blob, name) {
 	const url = window.URL.createObjectURL(blob);
 	audioData = [];
-	await SessionData.set("recording", audioData);
+	await SessionData?.set("recording", audioData);
 	duration = 0;
 	const a = document.createElement("a");
 	document.body.appendChild(a);
@@ -939,10 +930,10 @@ async function UploadAudio() {
 			recordings = [];
 			$("#btnUploadAudio").text("Audio saved");
 			$("#slcRecordings").html("");
-			await SessionData.set("recordingDescription", "");
-			await SessionData.set("recordings", []);
-			await SessionData.set("stashrecordings", []);
-			await SessionData.set("durations", []);
+			await SessionData?.set("recordingDescription", "");
+			await SessionData?.set("recordings", []);
+			await SessionData?.set("stashrecordings", []);
+			await SessionData?.set("durations", []);
 			setTimeout(() => $("#btnUploadAudio").text("Upload"), 2000);
 			localStorage.removeItem("texAudio");
 
@@ -954,8 +945,8 @@ async function UploadAudio() {
 			recordings = []
 			stashrecordings = []
 
-			localStorage.removeItem("comments");
-			sessionStorage.removeItem("comments");
+			// localStorage.removeItem("comments");
+			await SessionData?.set("comments", []);
 			localStorage.removeItem("recordings");
 			localStorage.removeItem("durations");
 
@@ -1313,7 +1304,7 @@ function Back() {
 
 async function SeeSelections() {
 	var html = "";
-	var connections = await SessionData.get("connections");
+	var connections = await SessionData?.get("connections");
 	if (!connections) connections = [];
 	var index = 1;
 	for (var connection of connections) {
@@ -1430,11 +1421,11 @@ async function Connect() {
 	$("li").removeClass("selected");
 	$("#btnConnect").addClass("disabled");
 	// for (var item of items) alert(item);
-	var connections = await SessionData.get("connections");
+	var connections = await SessionData?.get("connections");
 	if (!connections) connections = [];
 
 	connections.push({ id: id, text1: items[0], text2: items[1], ids: ids, percentage: percent });
-	SessionData.set("connections", connections);
+	await SessionData?.set("connections", connections);
 	$("#percent").val(0);
 }
 
@@ -1547,14 +1538,14 @@ async function RemoveSelection(selection, id) {
 		return selection.id !== id;
 	});
 
-	await SessionData.set("selections", selections);
+	await SessionData?.set("selections", selections);
 
-	var connections = await SessionData.get("connections");
+	var connections = await SessionData?.get("connections");
 	if (connections) {
 		connections = connections.filter(function (connection) {
 			return !connection.ids.includes(id);
 		});
-		await SessionData.set("connections", connections);
+		await SessionData?.set("connections", connections);
 	}
 
 	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
