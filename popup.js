@@ -472,7 +472,7 @@ async function Record() {
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
 	$("#record-animation2").addClass("play");
 
-	await SessionData.set("recording", []);
+	await SessionData?.set("recording", []);
 
 	if (recorder?.state === undefined) {
 		await SessionData?.removeData("durations");
@@ -567,12 +567,12 @@ async function Record() {
 				let whole_recordings = stashrecordings[0];
 				whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
 				for (let i = 1; i < stashrecordings?.length; i++) {
-					whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i])
+					whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i]);
 					// whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
 
 					// console.log("whole_recordings", whole_recordings);
 				}
-				base64 = await mergeBase64Audio(whole_recordings, base64)
+				base64 = await mergeBase64Audio(whole_recordings, base64);
 				// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
 			}
 			// base64 = await mergeRecordings([base64, ...stashrecordings]);
