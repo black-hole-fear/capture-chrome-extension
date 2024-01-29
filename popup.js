@@ -135,7 +135,7 @@ async function OnLoad() {
 	if (unsavedRecording || stashrecordings?.length > 0) {
 
 		durations = await SessionData?.get("durations");
-		var index = recordings.length + 1;
+		var index = recordings.length;
 
 		// Calculate minutes and seconds
 
@@ -154,9 +154,7 @@ async function OnLoad() {
 
 		// changed stuff
 		// audioData = []
-		duration = durations[index - 1] || 0;
-
-		console.log("duration: ", duration);
+		duration = durations[index] || 0;
 
 		if (unsavedRecording !== false && unsavedRecording?.length > 0) {
 			stashrecordings.push(unsavedRecording);
@@ -335,7 +333,6 @@ $(document).ready(function () {
 
 	$("#slcRecordings").on("change", function () {
 		selectedAudoiIndex = $(this).prop("selectedIndex");
-
 		$("#editButton").removeClass("disabled");
 		$("#deleteButton").removeClass("disabled");
 	});
@@ -475,7 +472,7 @@ async function Record() {
 	await SessionData?.set("recording", []);
 
 	if (recorder?.state === undefined) {
-		await SessionData?.removeData("durations");
+		await SessionData?.set("durations", []);
 	}
 
 	if (recorder?.state === "paused") {
@@ -545,7 +542,7 @@ async function Record() {
 
 
 			if (recorder.state === "inactive")
-				await SessionData.set("recording", false);
+				await SessionData?.set("recording", false);
 		};
 
 		recorder.onpause = async (e) => {
@@ -558,10 +555,6 @@ async function Record() {
 
 			var base64 = await blobToBase64(new Blob(audioData, { type: 'audio/wav' }));
 			// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-
-
-			console.log("stashrecordings =>", stashrecordings);
-			console.log("base64 =>", base64);
 
 			if (stashrecordings?.length > 0) {
 				let whole_recordings = stashrecordings[0];
@@ -578,9 +571,6 @@ async function Record() {
 			// base64 = await mergeRecordings([base64, ...stashrecordings]);
 			// base64 = await mergeBase64Audio([base64, stashrecordings[0]]);
 
-			console.log("new base64 full recording =>", base64);
-
-
 			recordings.push(base64);
 			durations[durations.length - 1] = duration;
 			await SessionData?.set("recordings", recordings);
@@ -588,8 +578,6 @@ async function Record() {
 
 			stashrecordings = [];
 			await SessionData?.set("stashrecordings", stashrecordings);
-
-			// console.log("I am stoppping it");
 
 			// Calculate minutes and seconds
 			var minutes = Math.floor(durations[durations?.length - 1] / 60);
@@ -652,7 +640,6 @@ $(document)?.on("click", "#deleteButton", deleteAudio);
 
 async function deleteAudio() {
 	var audioIndex = selectedAudoiIndex;
-	console.log("audioIndex =>", audioIndex);
 	if (audioIndex == undefined) {
 		alert("Select an Item!");
 		return;
@@ -661,9 +648,6 @@ async function deleteAudio() {
 	recordings.splice(audioIndex, 1);
 	comments.splice(audioIndex, 1);
 	durations.splice(audioIndex, 1);
-
-	console.log("recordings:", recordings);
-	console.log("comments:", comments);
 
 	await SessionData?.set("durations", durations);
 	await SessionData?.set("recordings", recordings);
@@ -684,9 +668,6 @@ async function deleteAudio() {
 	// await SessionData?.removeData('recordings');
 	const updateRecord = await SessionData?.get('recordings')
 	// updateRecord.splice(audioIndex, 1);
-
-	console.log("updatedRecord:", updateRecord);
-
 	selectedAudoiIndex = undefined;
 	$("#editButton").addClass("disabled");
 	$("#deleteButton").addClass("disabled");
@@ -771,18 +752,16 @@ async function Stop() {
 	} else if (recorder?.state === "recording") {
 		await recorder.requestData();
 		await recorder.stop();
-		await SessionData?.removeData('pauseRecorderTime');
+		await SessionData?.set('pauseRecorderTime', 0);
 	} else if (recorder?.state === "paused") {
 		await recorder.requestData();
 		await recorder.stop();
-		await SessionData?.removeData('pauseRecorderTime');
+		await SessionData?.set('pauseRecorderTime', 0);
 	}
 
 	// comments[comments.length - 1] = comment;
 	comments.push(comment);
 
-	console.log("Stop audio recording: ", comment);
-	console.log("comments print:", comments);
 	// Save the comments to localStorage
 	await SessionData?.set("comments", comments);
 	await SessionData?.set("durations", durations);
@@ -804,7 +783,6 @@ async function Pause() {
 	if (recorder.state === 'recording') {
 		// durations.push(duration);
 		recordTime = duration
-		console.log(durations);
 
 		durations[durations.length - 1] = duration || 0;
 
@@ -876,7 +854,6 @@ document.getElementById("txtAudioDescription").value = texAudio
 const progressBars = document.getElementById("progress-bar");
 
 async function UploadAudio() {
-	console.log(recorder);
 	if (recorder && recorder.state === "recording") {
 		alert("Audio Recording is in progress, Can not upload")
 		return;
