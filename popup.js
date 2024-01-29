@@ -515,7 +515,7 @@ async function Record() {
 				durations.pop();
 				await SessionData.set("durations", durations);
 				// await SessionData.set("durations", durations);
-				let comments = await SessionData?.get("comments") ? JSON.parse(SessionData?.get("comments")) : [];
+				let comments = await SessionData?.get("comments") ? SessionData?.get("comments") : [];
 				// if (comments.length > 0) comments.pop();
 				await SessionData?.set("comments", comments);
 			}
@@ -540,8 +540,8 @@ async function Record() {
 
 			// console.log("base64 data aaa gya", base64);
 
-			await SessionData.set("recording", base64); // yha pr base64
-			await SessionData.set("durations", durations);
+			await SessionData?.set("recording", base64); // yha pr base64
+			await SessionData?.set("durations", durations);
 
 
 			if (recorder.state === "inactive")
@@ -2160,21 +2160,15 @@ const recorderonstopnull = async () => {
 	console.log(stashrecordings);
 	if (stashrecordings?.length === 0) return;
 
-
-
 	let whole_recordings = stashrecordings[0];
+	whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
 	for (let i = 1; i < stashrecordings?.length; i++) {
 		whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i])
-		whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
 	}
 	// base64 = await mergeBase64Audio(whole_recordings, base64)
 	// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-
+	
 	base64 = whole_recordings
-
-
-	console.log("new base64 full recording =>", base64);
-
 
 	recordings.push(base64);
 	await SessionData?.set("recordings", recordings);
@@ -2183,14 +2177,12 @@ const recorderonstopnull = async () => {
 	stashrecordings = []
 	await SessionData?.set("stashrecordings", stashrecordings);
 
-	// console.log("I am stoppping it");
-
+	var index = recordings.length;
+	duration = durations[index - 1] || 0;
 	// Calculate minutes and seconds
-	var duration = await SessionData?.get('duration');
+	// var duration = await SessionData?.get('duration');
 	var minutes = Math.floor(duration / 60);
 	var seconds = duration % 60;
-
-	// console.log("this is minutes and secnod", minutes, seconds);
 
 	// Format the output as mm:ss
 	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
@@ -2200,7 +2192,7 @@ const recorderonstopnull = async () => {
 	var comment = comments[comments.length - 1];
 
 	function breakTextIntoLines(text, maxLength) {
-		const lines = '';
+		let lines = '';
 		for (let i = 0; i < text.length; i += maxLength) {
 			lines += text.substr(i, maxLength);
 		}
