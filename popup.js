@@ -79,7 +79,6 @@ async function OnLoad() {
 	else { SelectTab("text") };
 
 	// recordings
-
 	var savedRecordings = await SessionData?.get("recordings");
 
 	if (savedRecordings && savedRecordings?.length > 0) {
@@ -92,7 +91,6 @@ async function OnLoad() {
 			// var blob = await (await fetch(recording)).blob();
 
 			recordings?.push(recording);
-			console.log("Session Data; ", await SessionData?.get("comments"));
 			comments = await SessionData?.get("comments") ? await SessionData?.get("comments") : [];
 
 			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
@@ -280,6 +278,7 @@ async function OnLoad() {
 		$("#static-capture").prop('checked', true);
 	}
 }
+
 let email = "";
 async function Login() {
 	if (!username || !password) {
@@ -476,14 +475,14 @@ async function Record() {
 	await SessionData.set("recording", []);
 
 	if (recorder?.state === undefined) {
-		localStorage.removeItem("durations");
+		await SessionData?.removeData("durations");
 	}
 
 	if (recorder?.state === "paused") {
 		recorder.resume();
 
 		recordTimer = setInterval(async function () {
-			localStorage.setItem("durations", recordTime);
+			await SessionData?.set("durations", recordTime);
 			duration += 1;
 
 			await recorder.requestData();
@@ -498,7 +497,7 @@ async function Record() {
 		newrecorderonexit = true;
 		durations.push(0);
 		await SessionData?.set("comments", comments)
-		await SessionData.set("durations", durations);
+		await SessionData?.set("durations", durations);
 	}
 
 
@@ -522,7 +521,6 @@ async function Record() {
 			}
 
 			$("#btnPause, #btnStop, #btnMark").addClass("disabled");
-			$("#slcMarks").html("");
 			$("#btnRecord").removeClass("disabled");
 			if (newrecorderonexit) $("#lblRecordTime").text("00:00:00");
 			$("#record-animation2").removeClass("play");
@@ -579,7 +577,6 @@ async function Record() {
 			}
 			// base64 = await mergeRecordings([base64, ...stashrecordings]);
 			// base64 = await mergeBase64Audio([base64, stashrecordings[0]]);
-
 
 			console.log("new base64 full recording =>", base64);
 
@@ -639,7 +636,6 @@ async function Record() {
 			duration = 0;
 		};
 
-
 		if (recorder) {
 			recorder?.start();
 			recordTimer = setInterval(async function () {
@@ -648,7 +644,6 @@ async function Record() {
 				await recorder.requestData();
 			}, 1000);
 		}
-
 	});
 }
 
@@ -656,7 +651,6 @@ $(document)?.on("click", "#editButton", editComment)
 $(document)?.on("click", "#deleteButton", deleteAudio);
 
 async function deleteAudio() {
-
 	var audioIndex = selectedAudoiIndex;
 	console.log("audioIndex =>", audioIndex);
 	if (audioIndex == undefined) {
@@ -667,6 +661,9 @@ async function deleteAudio() {
 	recordings.splice(audioIndex, 1);
 	comments.splice(audioIndex, 1);
 	durations.splice(audioIndex, 1);
+
+	console.log("recordings:", recordings);
+	console.log("comments:", comments);
 
 	await SessionData?.set("durations", durations);
 	await SessionData?.set("recordings", recordings);
@@ -684,9 +681,11 @@ async function deleteAudio() {
 		$("#btnUploadAudio").addClass("disabled");
 	}
 
-	await SessionData?.removeData('recordings');
-	const updateRecord = await SessionData.get('recordings')
-	updateRecord.splice(audioIndex, 1);
+	// await SessionData?.removeData('recordings');
+	const updateRecord = await SessionData?.get('recordings')
+	// updateRecord.splice(audioIndex, 1);
+
+	console.log("updatedRecord:", updateRecord);
 
 	selectedAudoiIndex = undefined;
 	$("#editButton").addClass("disabled");
@@ -753,36 +752,35 @@ async function editComment() {
 
 /************ */
 async function Stop() {
+	var comment = prompt("Please enter a comment for the recording:");
+	if (comment === null) {
+		return;
+	}
+
 	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
-	$("#slcMarks").html("");
 	$("#btnRecord").removeClass("disabled");
 
 	$("#lblRecordTime").text("00:00:00");
-
 	$("#record-animation2").removeClass("play");
 	recording = false;
 	recordTime = 0;
-
 	clearInterval(recordTimer);
 
 	if (!recorder) {
 		recorderonstopnull();
-	}
-	else if (recorder?.state === "recording") {
+	} else if (recorder?.state === "recording") {
 		await recorder.requestData();
 		await recorder.stop();
-		localStorage.removeItem('pauseRecorderTime');
-	}
-	else if (recorder?.state === "paused") {
+		await SessionData?.removeData('pauseRecorderTime');
+	} else if (recorder?.state === "paused") {
 		await recorder.requestData();
 		await recorder.stop();
-		localStorage.removeItem('pauseRecorderTime');
+		await SessionData?.removeData('pauseRecorderTime');
 	}
-
-	var comment = prompt("Please enter a comment for the recording:");
 
 	// comments[comments.length - 1] = comment;
 	comments.push(comment);
+
 	console.log("Stop audio recording: ", comment);
 	console.log("comments print:", comments);
 	// Save the comments to localStorage
@@ -827,7 +825,7 @@ async function Pause() {
 
 		$("#lblRecordTime").text(Hhmmss(recordTime))
 
-		localStorage.setItem('pauseRecorderTime', recordTimer)
+		await SessionData?.set('pauseRecorderTime', recordTimer)
 
 	}
 }
@@ -1018,7 +1016,6 @@ async function UploadAudio() {
 async function cancelUpload() {
 	recorder.stop();
 	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
-	$("#slcMarks").html("");
 	$("#btnRecord").removeClass("disabled");
 	$("#lblRecordTime").text("00:00:00");
 	$("#record-animation2").removeClass("play");
@@ -2189,6 +2186,7 @@ const recorderonstopnull = async () => {
 	// console.log("I am stoppping it");
 
 	// Calculate minutes and seconds
+	var duration = await SessionData?.get('duration');
 	var minutes = Math.floor(duration / 60);
 	var seconds = duration % 60;
 
@@ -2197,16 +2195,16 @@ const recorderonstopnull = async () => {
 	// Format the output as mm:ss
 	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
-	let c = localStorage.getItem("durations");
+	// let c = localStorage.getItem("durations");
 
 	var comment = comments[comments.length - 1];
 
 	function breakTextIntoLines(text, maxLength) {
-		const lines = [];
+		const lines = '';
 		for (let i = 0; i < text.length; i += maxLength) {
-			lines.push(text.substr(i, maxLength));
+			lines += text.substr(i, maxLength);
 		}
-		return lines.join(' ');
+		return lines;
 	}
 
 	// Maximum length for each line of the comment text
