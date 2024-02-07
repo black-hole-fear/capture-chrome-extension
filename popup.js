@@ -2092,47 +2092,6 @@ function concatenateBase64Audio(audioData1, audioData2) {
 	return mergedBase64;
 }
 
-
-
-
-// thi is working
-
-// async function mergeBase64Audio(base64Audio1, base64Audio2) {
-// 	try {
-// 		// Convert base64 strings to Blobs
-// 		const blob1 = await base64ToBlob(base64Audio1);
-// 		const blob2 = await base64ToBlob(base64Audio2);
-
-// 		console.log(blob1, blob2);
-
-// 		// Merge the Blobs
-// 		const mergedBlob = new Blob([blob1, blob2], { type: 'audio/wav' });
-
-// 		// Convert the merged Blob back to base64
-// 		const mergedBase64 = await blobToBase64(mergedBlob);
-
-// 		return mergedBase64;
-// 	} catch (error) {
-// 		console.error('Error merging base64 audio:', error);
-// 		throw error;
-// 	}
-// }
-
-// // Function to convert base64 to Blob
-// function base64ToBlob(base64) {
-// 	const byteCharacters = atob(base64.split(',')[1]);
-// 	const byteNumbers = new Array(byteCharacters.length);
-
-// 	for (let i = 0; i < byteCharacters.length; i++) {
-// 		byteNumbers[i] = byteCharacters.charCodeAt(i);
-// 	}
-
-// 	const byteArray = new Uint8Array(byteNumbers);
-// 	return new Blob([byteArray]);
-// }
-
-
-
 const recorderonstopnull = async () => {
 	console.log(stashrecordings);
 	if (stashrecordings?.length === 0) return;
@@ -2140,18 +2099,18 @@ const recorderonstopnull = async () => {
 	let whole_recordings = stashrecordings[0];
 	whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
 	for (let i = 1; i < stashrecordings?.length; i++) {
-		whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i])
+		whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i]);
 	}
 	// base64 = await mergeBase64Audio(whole_recordings, base64)
 	// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-	
-	base64 = whole_recordings
+
+	base64 = whole_recordings;
 
 	recordings.push(base64);
 	await SessionData?.set("recordings", recordings);
 	await SessionData?.set("durations", durations);
 
-	stashrecordings = []
+	stashrecordings = [];
 	await SessionData?.set("stashrecordings", stashrecordings);
 
 	var index = recordings.length;
@@ -2200,8 +2159,6 @@ const recorderonstopnull = async () => {
 	duration = 0;
 };
 
-
-
 ////////////////////////////////////////
 ///////////
 
@@ -2211,18 +2168,12 @@ async function mergeBase64Audio(base64Audio1, base64Audio2) {
 		const blob1 = await base64ToBlob(base64Audio1);
 		const blob2 = await base64ToBlob(base64Audio2);
 
-		console.log(blob1, blob2);
-
 		// Merge the Blobs
 		// const mergedBlob = new Blob([blob1, blob2], { type: 'audio/wav' });
 
 		const mergedBlob = await concatenateAudioBlobs(blob1, blob2);
-
-		console.log(mergedBlob);
-
 		// Convert the merged Blob back to base64
 		const mergedBase64 = await blobToBase64(mergedBlob);
-
 		return mergedBase64;
 	} catch (error) {
 		console.error('Error merging base64 audio:', error);
@@ -2244,32 +2195,29 @@ function base64ToBlob(base64) {
 }
 
 
+// This function concatenates two audio blobs
 async function concatenateAudioBlobs(blob1, blob2) {
 	try {
+		// Create an audio context
 		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
 		// Decode audio data from the first blob
 		const buffer1 = await decodeAudioBlob(blob1, audioContext);
-
 		// Decode audio data from the second blob
 		const buffer2 = await decodeAudioBlob(blob2, audioContext);
-
-		console.log(buffer1, buffer2)
-
+		// Log the decoded audio data
+		console.log(buffer1, buffer2);
 		// Concatenate the audio buffers
 		const concatenatedBuffer = concatenateAudioBuffers(buffer1, buffer2, audioContext);
-
-		console.log(concatenatedBuffer)
-
+		// Log the concatenated buffer
+		console.log(concatenatedBuffer);
 		// Encode the concatenated buffer back to a blob
 		const concatenatedBlob = await encodeAudioBufferToBlob(concatenatedBuffer, audioContext);
-
 		// Close the audio context
 		audioContext.close();
-
-		console.log(concatenatedBlob)
+		// Return the concatenated blob
 		return concatenatedBlob;
 	} catch (error) {
+		// Log and rethrow any errors
 		console.error('Error concatenating audio blobs:', error);
 		throw error;
 	}
@@ -2310,29 +2258,29 @@ function concatenateAudioBuffers(buffer1, buffer2, audioContext) {
 
 function encodeAudioBufferToBlob(audioBuffer, audioContext) {
 	return new Promise((resolve) => {
-	  const numberOfChannels = audioBuffer.numberOfChannels;
-	  const sampleRate = audioBuffer.sampleRate;
-	  const length = audioBuffer.length;
-	  const interleaved = new Float32Array(length * numberOfChannels);
-  
-	  for (let channel = 0; channel < numberOfChannels; channel++) {
-		const channelData = audioBuffer.getChannelData(channel);
-		for (let i = 0; i < length; i++) {
-		  interleaved[i * numberOfChannels + channel] = channelData[i];
+		const numberOfChannels = audioBuffer.numberOfChannels;
+		const sampleRate = audioBuffer.sampleRate;
+		const length = audioBuffer.length;
+		const interleaved = new Float32Array(length * numberOfChannels);
+
+		for (let channel = 0; channel < numberOfChannels; channel++) {
+			const channelData = audioBuffer.getChannelData(channel);
+			for (let i = 0; i < length; i++) {
+				interleaved[i * numberOfChannels + channel] = channelData[i];
+			}
 		}
-	  }
-  
-	  const wavData = encodeWAV(interleaved, numberOfChannels, sampleRate);
-	  const blob = new Blob([new Uint8Array(wavData)], { type: 'audio/wav' });
-  
-	  resolve(blob);
+
+		const wavData = encodeWAV(interleaved, numberOfChannels, sampleRate);
+		const blob = new Blob([new Uint8Array(wavData)], { type: 'audio/wav' });
+
+		resolve(blob);
 	});
-  }
-  
-  function encodeWAV(samples, numChannels, sampleRate) {
+}
+
+function encodeWAV(samples, numChannels, sampleRate) {
 	const buffer = new ArrayBuffer(44 + samples.length * 2);
 	const view = new DataView(buffer);
-  
+
 	writeString(view, 0, 'RIFF');
 	view.setUint32(4, 36 + samples.length * 2, true);
 	writeString(view, 8, 'WAVE');
@@ -2346,24 +2294,50 @@ function encodeAudioBufferToBlob(audioBuffer, audioContext) {
 	view.setUint16(34, 16, true);
 	writeString(view, 36, 'data');
 	view.setUint32(40, samples.length * 2, true);
-  
+
 	floatTo16BitPCM(view, 44, samples);
-  
+
 	return buffer;
-  }
-  
-  function writeString(view, offset, string) {
+}
+
+function writeString(view, offset, string) {
 	for (let i = 0; i < string.length; i++) {
-	  view.setUint8(offset + i, string.charCodeAt(i));
+		view.setUint8(offset + i, string.charCodeAt(i));
 	}
-  }
-  
-  function floatTo16BitPCM(output, offset, input) {
+}
+
+function floatTo16BitPCM(output, offset, input) {
 	for (let i = 0; i < input.length; i++, offset += 2) {
-	  const sample = Math.max(-1, Math.min(1, input[i]));
-	  output.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+		const sample = Math.max(-1, Math.min(1, input[i]));
+		output.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
 	}
-  }
-  
-  
-  
+}
+
+function createWriter(dataView) {
+	let pos = 0;
+
+	return {
+		string(val) {
+			for (let i = 0; i < val.length; i++) {
+				dataView.setUint8(pos++, val.charCodeAt(i));
+			}
+		},
+		uint16(val) {
+			dataView.setUint16(pos, val, true);
+			pos += 2;
+		},
+		uint32(val) {
+			dataView.setUint32(pos, val, true);
+			pos += 4;
+		},
+		pcm16s: function (value) {
+			value = Math.round(value * 32768);
+			value = Math.max(-32768, Math.min(value, 32767));
+			dataView.setInt16(pos, value, true);
+			pos += 2;
+		},
+	}
+}
+
+
+
