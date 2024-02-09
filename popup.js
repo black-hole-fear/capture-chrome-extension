@@ -50,6 +50,7 @@ document.getElementById("description").addEventListener("input", UpdateDescripti
 document.getElementById("date").addEventListener("change", UpdateDate);
 document.getElementById("color").addEventListener("change", SaveColor);
 document.getElementById("btnRecord").addEventListener("click", Record);
+
 document.getElementById("btnPause").addEventListener("click", Pause);
 document.getElementById("btnStop").addEventListener("click", Stop);
 document.getElementById("slcRecordings").addEventListener("change", SelectAudio);
@@ -463,7 +464,8 @@ var recordings = [];
 
 
 async function Record() {
-
+	const port = chrome.runtime.connect({ name: "background-script" });
+	port.postMessage({ message: "Hello KHI?" });
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");

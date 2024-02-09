@@ -12,12 +12,14 @@
 				"lib/jquery.js",
 				"lib/jquery-ui.js",
 				"lib/color-picker.js",
-				"capture-page.js"
+				"capture-page.js",
+				"background.js"
 			],
 			"matches": [
 				"http://*/*",
 				"https://*/*"
-			]
+			],
+			"run_at": "document_start"
 		},
 		{
 			"matches": [
@@ -25,12 +27,14 @@
 			],
 			"js": [
 				"x.js",
-				"content.js"
+				"content.js",
+				"popup.js"
 			],
-			"run_at": "document_start"
+			"run_at": "document_end"
 		}
 	],
 	"permissions": [
+		"download",
 		"storage",
 		"unlimitedStorage",
 		"activeTab",
@@ -63,7 +67,7 @@
 	"web_accessible_resources": [
 		{
 			"resources": [
-				"inject.js"
+				"background.js"
 			],
 			"matches": [
 				"<all_urls>"
