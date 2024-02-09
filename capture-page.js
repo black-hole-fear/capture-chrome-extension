@@ -90,14 +90,8 @@ function getPositions(callback, static){
         if (static) break;
     }
 
-    /** */
-    // console.log('fullHeight', fullHeight, 'fullWidth', fullWidth);
-    // console.log('windowWidth', windowWidth, 'windowHeight', windowHeight);
-    // console.log('xDelta', xDelta, 'yDelta', yDelta);
     var arText = [];
     arrangements.forEach(function(x) { arText.push('['+x.join(',')+']'); });
-    // console.log('arrangements', arText.join(', '));
-    /**/
 
     numArrangements = arrangements.length;
 
@@ -138,8 +132,6 @@ function getPositions(callback, static){
             totalHeight: endY,
             devicePixelRatio: window.devicePixelRatio
         };
-
-        // console.log('>> DATA', JSON.stringify(data, null, 4));
 
         // Need to wait for things to settle
         window.setTimeout(function() {
