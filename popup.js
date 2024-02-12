@@ -490,7 +490,6 @@ async function Record() {
 	}
 
 
-
 	chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
 		try {
 			context = new AudioContext();
@@ -767,13 +766,6 @@ function SelectAudio() {
 
 /************************************************************************ */
 async function Pause() {
-	var port = chrome.extension.connect({
-		name: "Sample Communication"
-	});
-	port.postMessage("Hi Background");
-	port.onMessage.addListener(function(msg) {
-		console.log("message received" + msg);
-	});
 	$("#btnPause").addClass("disabled");
 	$("#btnRecord").removeClass("disabled");
 	$("#record-animation2").removeClass("play");
@@ -925,8 +917,8 @@ async function UploadAudio() {
 			localStorage.removeItem("durations");
 
 			// Reset the audio element's "muted" attribute
-			const audioElement = document.getElementById("yourAudioElementId");
-			audioElement.muted = false;
+			// const audioElement = document.getElementById("yourAudioElementId");
+			// audioElement.muted = false;
 		} else {
 			console.log("Error uploading audio file: " + xhr.statusText);
 			const x = JSON.parse(xhr.response)

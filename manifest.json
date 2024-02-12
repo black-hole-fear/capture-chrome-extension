@@ -10,7 +10,7 @@
 		"128": "/images/yourarchive_logo.png"
 	},
 	"background": {
-		"service_worker": "./popup.js"
+		"service_worker": "./background.js"
 	},
 	"action": {
 		"default_popup": "./popup.html",
@@ -38,6 +38,22 @@
 		"tabs"
 	],
 	"host_permissions": [
-		"https://www.google.com/*"
-	]
+		"https://*/*"
+	],
+	"commands": {
+		"start": {
+			"suggested_key": {
+				"default": "Ctrl+Shift+S", 
+				"mac": "Command+Shift+U"
+			},
+			"description": "Start Capture"
+		},
+		"stop": {
+			"suggested_key": {
+				"default": "Ctrl+Shift+X",
+				"mac": "MacCtrl+Shift+X"
+			},
+			"description": "Stop Capture"
+		}
+	}
 }
