@@ -1,40 +1,35 @@
 {
 	"name": "Selection Saver",
 	"description": "Testing Version",
-	"version": "4.4",
+	"version": "0.1.0",
 	"manifest_version": 3,
-	"background": {
-		"service_worker": "background.js"
+	"icons": {
+		"16": "/images/yourarchive_logo.png",
+		"32": "/images/yourarchive_logo.png",
+		"48": "/images/yourarchive_logo.png",
+		"128": "/images/yourarchive_logo.png"
 	},
-	"content_scripts": [
-		{
-			"js": [
-				"lib/jquery.js",
-				"lib/jquery-ui.js",
-				"lib/color-picker.js",
-				"capture-page.js",
-				"background.js"
-			],
-			"matches": [
-				"http://*/*",
-				"https://*/*"
-			],
-			"run_at": "document_start"
+	"background": {
+		"service_worker": "./popup.js"
+	},
+	"action": {
+		"default_popup": "./popup.html",
+		"default_icons": {
+			"16": "/images/yourarchive_logo.png",
+			"32": "/images/yourarchive_logo.png",
+			"48": "/images/yourarchive_logo.png",
+			"128": "/images/yourarchive_logo.png"
 		},
-		{
-			"matches": [
-				"<all_urls>"
-			],
-			"js": [
-				"x.js",
-				"content.js",
-				"popup.js"
-			],
-			"run_at": "document_end"
+		"default_popup_options": {
+			"width": 300,
+			"height": 200,
+			"top": 100,
+			"left": 100
 		}
-	],
+	},
+	"options_page": "./options.html",
 	"permissions": [
-		"download",
+		"downloads",
 		"storage",
 		"unlimitedStorage",
 		"activeTab",
@@ -42,36 +37,7 @@
 		"tabCapture",
 		"tabs"
 	],
-	"action": {
-		"default_popup": "popup.html",
-		"default_popup_options": {
-			"width": 300,
-			"height": 200,
-			"top": 100,
-			"left": 100
-		},
-		"default_icon": {
-			"16": "/images/yourarchive_logo.png",
-			"32": "/images/yourarchive_logo.png",
-			"48": "/images/yourarchive_logo.png",
-			"128": "/images/yourarchive_logo.png"
-		}
-	},
-	"icons": {
-		"16": "/images/yourarchive_logo.png",
-		"32": "/images/yourarchive_logo.png",
-		"48": "/images/yourarchive_logo.png",
-		"128": "/images/yourarchive_logo.png"
-	},
-	"options_page": "options.html",
-	"web_accessible_resources": [
-		{
-			"resources": [
-				"background.js"
-			],
-			"matches": [
-				"<all_urls>"
-			]
-		}
+	"host_permissions": [
+		"https://www.google.com/*"
 	]
 }

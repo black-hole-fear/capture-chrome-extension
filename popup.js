@@ -247,14 +247,6 @@ async function OnLoad() {
 	}
 
 	let sd = localStorage.getItem('newSelections');
-	console.log('sd>>>', JSON.parse(sd));
-	// if (s) {
-	// 	s = JSON.parse(s);
-	// 	for (let i = 0; i < s.length; i++) {
-	// 		const element = s[i];
-	// 		console.log('vvvvvvvvvvvvvvvvv', element);
-	// 	}
-	// }
 
 	if (sd && sd)
 		sd = JSON.parse(sd);
@@ -464,8 +456,6 @@ var recordings = [];
 
 
 async function Record() {
-	const port = chrome.runtime.connect({ name: "background-script" });
-	port.postMessage({ message: "Hello KHI?" });
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
@@ -777,6 +767,13 @@ function SelectAudio() {
 
 /************************************************************************ */
 async function Pause() {
+	var port = chrome.extension.connect({
+		name: "Sample Communication"
+	});
+	port.postMessage("Hi Background");
+	port.onMessage.addListener(function(msg) {
+		console.log("message received" + msg);
+	});
 	$("#btnPause").addClass("disabled");
 	$("#btnRecord").removeClass("disabled");
 	$("#record-animation2").removeClass("play");
