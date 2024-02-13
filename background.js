@@ -1,4 +1,4 @@
-const startCapture = function() {
+const startAudioCapture = function() {
   chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
 		try {
 			context = new AudioContext();
@@ -104,7 +104,7 @@ const startCapture = function() {
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "start") {
-    startCapture();
+    startAudioCapture();
   }
 })
 
@@ -113,7 +113,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse(sessionStorage.getItem(request.currentTab));
   } else if (request.currentTab){
     sendResponse(false);
-  } else if (request === "startCapture") {
-    startCapture();
+  } else if (request === "startAudioCapture") {
+    startAudioCapture();
   }
 });

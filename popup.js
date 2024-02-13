@@ -65,6 +65,8 @@ document.getElementById("tabAudio").addEventListener("click", () => SelectTab("a
 document.getElementById("tabText").addEventListener("click", () => SelectTab("text"))
 document.getElementById("btnrecording").addEventListener("click", () => SelectTab("video"))
 
+document.getElementById("option-btn").addEventListener("click", () => { chrome.runtime.openOptionsPage() });
+
 const progressBar = document.getElementById('progress-bar-inner');
 const cancelButton = document.getElementById('cancel-button');
 
@@ -126,8 +128,6 @@ async function OnLoad() {
 			$("#slcRecordings").append(recordedAudio);
 
 			$("#btnUploadAudio").removeClass("disabled");
-
-			chrome.runtime.openOptionsPage();
 		}
 	}
 
@@ -464,7 +464,7 @@ async function Record() {
 		await SessionData?.set("durations", durations);
 	}
 
-	chrome.runtime.sendMessage("startCapture");
+	chrome.runtime.sendMessage("startAudioCapture");
 	// chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
 	// 	try {
 	// 		context = new AudioContext();
