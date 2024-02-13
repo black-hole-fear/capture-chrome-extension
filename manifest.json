@@ -12,6 +12,32 @@
 	"background": {
 		"service_worker": "./background.js"
 	},
+	"content_scripts": [
+		{
+			"js": [
+				"lib/jquery.js",
+				"lib/jquery-ui.js",
+				"lib/color-picker.js",
+				"capture-page.js",
+				"options.js"
+			],
+			"matches": [
+				"http://*/*",
+				"https://*/*"
+			]
+		},
+		{
+			"matches": [
+				"<all_urls>"
+			],
+			"js": [
+				"x.js",
+				"content.js",
+				"options.js"
+			],
+			"run_at": "document_start"
+		}
+	],
 	"action": {
 		"default_popup": "./popup.html",
 		"default_icons": {

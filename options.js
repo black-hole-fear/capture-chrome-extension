@@ -1,47 +1,91 @@
-let page = document.getElementById("buttonDiv");
-let selectedClassName = "current";
-const presetButtonColors = ["#3aa757", "#e8453c", "#f9bb2d", "#4688f1"];
-
-// Reacts to a button click by marking marking the selected button and saving
-// the selection
-function handleButtonClick(event) {
-  // Remove styling from the previously selected color
-  let current = event.target.parentElement.querySelector(
-    `.${selectedClassName}`
-  );
-  if (current && current !== event.target) {
-    current.classList.remove(selectedClassName);
-  }
-
-  // Mark the button as selected
-  let color = event.target.dataset.color;
-  event.target.classList.add(selectedClassName);
-  chrome.storage.sync.set({ color });
-}
-
-// Add a button to the page for each supplied color
-function constructOptions(buttonColors) {
-  chrome.storage.sync.get("color", (data) => {
-    let currentColor = data.color;
-
-    // For each color we were provided…
-    for (let buttonColor of buttonColors) {
-      // …crate a button with that color…
-      let button = document.createElement("button");
-      button.dataset.color = buttonColor;
-      button.style.backgroundColor = buttonColor;
-
-      // …mark the currently selected color…
-      if (buttonColor === currentColor) {
-        button.classList.add(selectedClassName);
-      }
-
-      // …and register a listener for when that button is clicked
-      button.addEventListener("click", handleButtonClick);
-      page.appendChild(button);
+document.addEventListener('DOMContentLoaded', () => {
+  const mute = document.getElementById('mute');
+  const maxTime = document.getElementById('maxTime');
+  const save = document.getElementById('save');
+  const status = document.getElementById('status');
+  const mp3Select = document.getElementById('mp3');
+  const wavSelect = document.getElementById('wav');
+  const quality = document.getElementById("quality");
+  const qualityLi = document.getElementById("qualityLi");
+  const limitRemoved = document.getElementById("removeLimit");
+  let currentFormat;
+  //initial settings
+  chrome.storage.sync.get({
+    muteTab: false,
+    maxTime: 1200000,
+    format: "mp3",
+    quality: 192,
+    limitRemoved: false
+  }, (options) => {
+    mute.checked = options.muteTab;
+    limitRemoved.checked = options.limitRemoved;
+    maxTime.disabled = options.limitRemoved;
+    maxTime.value = options.maxTime/60000;
+    currentFormat = options.format;
+    if (options.format === "mp3") {
+      mp3Select.checked = true;
+      qualityLi.style.display = "block";
+    } else {
+      wavSelect.checked = true;
+    }
+    if (options.quality === "96") {
+      quality.selectedIndex = 0;
+    } else if(options.quality === "192") {
+      quality.selectedIndex = 1;
+    } else {
+      quality.selectedIndex = 2;
     }
   });
-}
 
-// Initialize the page by constructing the color options
-constructOptions(presetButtonColors);
+  mute.onchange = () => {
+    status.innerHTML = "";
+  }
+
+  maxTime.onchange = () => {
+    status.innerHTML = "";
+    if(maxTime.value > 20) {
+      maxTime.value = 20;
+    } else if (maxTime.value < 1) {
+      maxTime.value = 1;
+    } else if (isNaN(maxTime.value)) {
+      maxTime.value = 20;
+    }
+  }
+
+  mp3Select.onclick = () => {
+    currentFormat = "mp3";
+    qualityLi.style.display = "block";
+    status.innerHTML = "";
+  }
+
+  wavSelect.onclick = () => {
+    currentFormat = "wav";
+    qualityLi.style.display = "none";
+    status.innerHTML = "";
+  }
+
+  quality.onchange = (e) => {
+    status.innerHTML = "";
+  }
+
+  limitRemoved.onchange = () => {
+    if(limitRemoved.checked) {
+      maxTime.disabled = true;
+      status.innerHTML = "WARNING: Recordings that are too long may not save properly!"
+    } else {
+      maxTime.disabled = false;
+      status.innerHTML = "";
+    }
+  }
+
+  save.onclick = () => {
+    chrome.storage.sync.set({
+      muteTab: mute.checked,
+      maxTime: maxTime.value*60000,
+      format: currentFormat,
+      quality: quality.value,
+      limitRemoved: limitRemoved.checked
+    });
+    status.innerHTML = "Settings saved!"
+  }
+});
