@@ -19,14 +19,14 @@ const WEBSITE_URL = "http://alpha.yourarchiv.com";
 var finalScreenshot = null;
 var finalScreenshot2 = null;
 
-// record
-var recorder;
-var saveRecording = false;
-var audioData = [];
-var duration = 0;
-var recordings = [];
-var durations = [];
-var stashrecordings = [];
+// // record
+// var recorder;
+// var saveRecording = false;
+// var audioData = [];
+// var duration = 0;
+// var recordings = [];
+// var durations = [];
+// var stashrecordings = [];
 
 var comments = [];
 
@@ -49,8 +49,8 @@ document.getElementById("description").addEventListener("input", UpdateDescripti
 
 document.getElementById("date").addEventListener("change", UpdateDate);
 document.getElementById("color").addEventListener("change", SaveColor);
-document.getElementById("btnRecord").addEventListener("click", Record);
 
+document.getElementById("btnRecord").addEventListener("click", Record);
 document.getElementById("btnPause").addEventListener("click", Pause);
 document.getElementById("btnStop").addEventListener("click", Stop);
 document.getElementById("slcRecordings").addEventListener("change", SelectAudio);
@@ -82,75 +82,70 @@ async function OnLoad() {
 	else { SelectTab("text") };
 
 	// recordings
-	var savedRecordings = await SessionData?.get("recordings");
+	var description = await SessionData?.get("recordingDescription");
+	durations = await SessionData?.get("durations");
 
-	if (savedRecordings && savedRecordings?.length > 0) {
+	if (description) $("#txtAudioDescription").val(description);
+	// for (var [index, recording] of savedRecordings.entries()) {
+	// 	// var blob = await (await fetch(recording)).blob();
 
-		var description = await SessionData?.get("recordingDescription");
-		durations = await SessionData?.get("durations");
+	// 	recordings?.push(recording);
+	// 	comments = await SessionData?.get("comments") ? await SessionData?.get("comments") : [];
 
-		if (description) $("#txtAudioDescription").val(description);
-		for (var [index, recording] of savedRecordings.entries()) {
-			// var blob = await (await fetch(recording)).blob();
+	// 	const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
 
-			recordings?.push(recording);
-			comments = await SessionData?.get("comments") ? await SessionData?.get("comments") : [];
+	// 	// Calculate minutes and seconds
+	// 	var minutes = Math.floor(durations[index] / 60);
+	// 	var seconds = durations[index] % 60;
 
-			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
+	// 	// Format the output as mm:ss
+	// 	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
-			// Calculate minutes and seconds
-			var minutes = Math.floor(durations[index] / 60);
-			var seconds = durations[index] % 60;
+	// 	function breakTextIntoLines(text, maxLength) {
+	// 		let lines = "";
+	// 		for (let i = 0; i < text.length; i += maxLength) {
+	// 			lines += text.substr(i, maxLength);
+	// 		}
+	// 		return lines;
+	// 	}
 
-			// Format the output as mm:ss
-			var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+	// 	// Maximum length for each line of the comment text
+	// 	const maxCommentLineLength = 40;
 
-			function breakTextIntoLines(text, maxLength) {
-				let lines = "";
-				for (let i = 0; i < text.length; i += maxLength) {
-					lines += text.substr(i, maxLength);
-				}
-				return lines;
-			}
+	// 	// Break comment text into lines
+	// 	const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+	// 	var recordedAudio = $(`
+	// 		<option style="text-wrap: wrap;">
+	// 			${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+	// 			: ${formattedComment}
+	// 			<div class="comment-text" style="display: none;"></div>
+	// 		</option>`
+	// 	);
+	// 	$("#slcRecordings").append(recordedAudio);
 
-			// Maximum length for each line of the comment text
-			const maxCommentLineLength = 40;
+	// 	$("#btnUploadAudio").removeClass("disabled");
+	// }
 
-			// Break comment text into lines
-			const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
-			var recordedAudio = $(`
-				<option style="text-wrap: wrap;">
-					${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
-					: ${formattedComment}
-					<div class="comment-text" style="display: none;"></div>
-				</option>`
-			);
-			$("#slcRecordings").append(recordedAudio);
+	// var unsavedRecording = await SessionData?.get("recording");
 
-			$("#btnUploadAudio").removeClass("disabled");
-		}
-	}
+	// stashrecordings = await SessionData.get("stashrecordings") || [];
 
-	var unsavedRecording = await SessionData?.get("recording");
+	// if (unsavedRecording || stashrecordings?.length > 0) {
 
-	stashrecordings = await SessionData.get("stashrecordings") || [];
+	// 	durations = await SessionData?.get("durations");
+	// 	var index = recordings.length;
 
-	if (unsavedRecording || stashrecordings?.length > 0) {
+	// 	duration = durations[index] || 0;
 
-		durations = await SessionData?.get("durations");
-		var index = recordings.length;
+	// 	if (unsavedRecording !== false && unsavedRecording?.length > 0) {
+	// 		stashrecordings.push(unsavedRecording);
+	// 	}
+	// 	await SessionData?.set("stashrecordings", stashrecordings);
 
-		duration = durations[index] || 0;
-
-		if (unsavedRecording !== false && unsavedRecording?.length > 0) {
-			stashrecordings.push(unsavedRecording);
-		}
-		await SessionData?.set("stashrecordings", stashrecordings);
-
-		$("#btnUploadAudio").addClass("disabled");
-		$("#btnStop").removeClass("disabled");
-		$("#lblRecordTime").text(Hhmmss(duration));
-	}
+	// 	$("#btnUploadAudio").addClass("disabled");
+	// 	$("#btnStop").removeClass("disabled");
+	// 	$("#lblRecordTime").text(Hhmmss(duration));
+	// }
 	await SessionData?.set("recording", false);
 
 	var token = await GetStorage("token");
@@ -438,33 +433,37 @@ async function Record() {
 
 	await SessionData?.set("recording", []);
 
-	if (recorder?.state === undefined) {
-		await SessionData?.set("durations", []);
-	}
+	// if (recorder?.state === undefined) {
+	// 	await SessionData?.set("durations", []);
+	// }
 
-	if (recorder?.state === "paused") {
-		recorder.resume();
+	// if (recorder?.state === "paused") {
+	// 	recorder.resume();
 
-		recordTimer = setInterval(async function () {
-			await SessionData?.set("durations", recordTime);
-			duration += 1;
+	// 	recordTimer = setInterval(async function () {
+	// 		await SessionData?.set("durations", recordTime);
+	// 		duration += 1;
 
-			await recorder.requestData();
+	// 		await recorder.requestData();
 
-			$("#lblRecordTime").text(Hhmmss(recordTime += 1));
-		}, 1000);
-		// durations.push();
-		return;
-	}
+	// 		$("#lblRecordTime").text(Hhmmss(recordTime += 1));
+	// 	}, 1000);
+	// 	// durations.push();
+	// 	return;
+	// }
 	let newrecorderonexit = false;
-	if (stashrecordings?.length === 0) {
-		newrecorderonexit = true;
-		durations.push(0);
-		await SessionData?.set("comments", comments)
-		await SessionData?.set("durations", durations);
-	}
-
-	chrome.runtime.sendMessage("startAudioCapture");
+	// if (stashrecordings?.length === 0) {
+	// 	newrecorderonexit = true;
+		// durations.push(0);
+		// await SessionData?.set("comments", comments)
+		// await SessionData?.set("durations", durations);
+	// }
+	chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+		chrome.runtime.sendMessage({ 
+			action: "startAudioCapture",
+			currentTab: tabs[0]
+		});
+	});
 	// chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
 	// 	try {
 	// 		context = new AudioContext();
@@ -574,11 +573,11 @@ async function Record() {
 	// 		// ${c && c ? c : formattedDuration}
 
 	// 		var audio = $(`
-    //             <option style="text-wrap: wrap;">
-    //                 ${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
-    //                 : ${formattedComment}
+	//             <option style="text-wrap: wrap;">
+	//                 ${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+	//                 : ${formattedComment}
 	// 				<div class="comment-text" style="display: none;"></div>
-    //             </option>`
+	//             </option>`
 	// 		);
 
 	// 		$("#slcRecordings")?.append(audio);
@@ -2059,7 +2058,6 @@ function concatenateBase64Audio(audioData1, audioData2) {
 }
 
 const recorderonstopnull = async () => {
-	console.log(stashrecordings);
 	if (stashrecordings?.length === 0) return;
 
 	let whole_recordings = stashrecordings[0];
@@ -2305,5 +2303,24 @@ function createWriter(dataView) {
 	}
 }
 
+chrome.runtime.onMessage.addListener(async (message) => {
+	chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+		if (message.action === 'tabCaptureError' && tabs[0].id === message.payload.currentTab.id) {
+			if (newrecorderonexit) {
+				durations.pop();
+				await SessionData?.set("durations", durations);
+				// await SessionData.set("durations", durations);
+				let comments = await SessionData?.get("comments") ? SessionData?.get("comments") : [];
+				// if (comments.length > 0) comments.pop();
+				await SessionData?.set("comments", comments);
+			}
 
+			$("#btnPause, #btnStop, #btnMark").addClass("disabled");
+			$("#btnRecord").removeClass("disabled");
+			if (newrecorderonexit) $("#lblRecordTime").text("00:00:00");
+			$("#record-animation2").removeClass("play");
 
+			alert("No tab is selected, Once select the tab.");
+		}
+	});
+})

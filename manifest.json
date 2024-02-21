@@ -19,7 +19,7 @@
 				"lib/jquery-ui.js",
 				"lib/color-picker.js",
 				"capture-page.js",
-				"options.js"
+				"worker.js"
 			],
 			"matches": [
 				"http://*/*",
