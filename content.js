@@ -52,3 +52,4 @@ var SessionData = (function () {
 
 	return { get, set, clear, removeData };
 })();
+

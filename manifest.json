@@ -61,7 +61,8 @@
 		"activeTab",
 		"scripting",
 		"tabCapture",
-		"tabs"
+		"tabs",
+		"audioCapture"
 	],
 	"host_permissions": [
 		"https://*/*"

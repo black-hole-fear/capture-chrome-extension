@@ -174,110 +174,114 @@ class Recorder {
 
 
 
-const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
-  chrome.tabCapture.capture({ audio: true }, (stream) => { // sets up stream for capture
-    let startTabId; //tab when the capture is started
-    let timeout;
-    let completeTabID; //tab when the capture is stopped
-    let audioURL = null; //resulting object when encoding is completed
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => startTabId = tabs[0].id) //saves start tab
-    const liveStream = stream;
-    const audioCtx = new AudioContext();
-    const source = audioCtx.createMediaStreamSource(stream);
-    let mediaRecorder = new Recorder(source); //initiates the recorder based on the current stream
-    mediaRecorder.setEncoding(format); //sets encoding based on options
-    if (limitRemoved) { //removes time limit
-      mediaRecorder.setOptions({ timeLimit: 10800 });
-    } else {
-      mediaRecorder.setOptions({ timeLimit: timeLimit / 1000 });
-    }
-    if (format === "mp3") {
-      mediaRecorder.setOptions({ mp3: { bitRate: quality } });
-    }
-    console.log("start recording...");
-    debugger;
-    mediaRecorder.startRecording();
-
-    function onStopCommand(command) { //keypress
-      if (command === "stop") {
-        stopCapture();
-      }
-    }
-    function onStopClick(request) { //click on popup
-      if (request === "stopCapture") {
-        stopCapture();
-      } else if (request === "cancelCapture") {
-        cancelCapture();
-      } else if (request.cancelEncodeID) {
-        if (request.cancelEncodeID === startTabId && mediaRecorder) {
-          mediaRecorder.cancelEncoding();
-        }
-      }
-    }
-    chrome.commands.onCommand.addListener(onStopCommand);
-    chrome.runtime.onMessage.addListener(onStopClick);
-    mediaRecorder.onComplete = (recorder, blob) => {
-      audioURL = window.URL.createObjectURL(blob);
-      if (completeTabID) {
-        chrome.tabs.sendMessage(completeTabID, { type: "encodingComplete", audioURL });
-      }
-      mediaRecorder = null;
-    }
-    mediaRecorder.onEncodingProgress = (recorder, progress) => {
-      if (completeTabID) {
-        chrome.tabs.sendMessage(completeTabID, { type: "encodingProgress", progress: progress });
-      }
-    }
-
-    const stopCapture = function () {
-      let endTabId;
-      //check to make sure the current tab is the tab being captured
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        endTabId = tabs[0].id;
-        if (mediaRecorder && startTabId === endTabId) {
-          mediaRecorder.finishRecording();
-          chrome.tabs.create({ url: "complete.html" }, (tab) => {
-            completeTabID = tab.id;
-            let completeCallback = () => {
-              chrome.tabs.sendMessage(tab.id, { type: "createTab", format: format, audioURL, startID: startTabId });
-            }
-            setTimeout(completeCallback, 500);
-          });
-          closeStream(endTabId);
-        }
-      })
-    }
-
-    const cancelCapture = function () {
-      let endTabId;
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        endTabId = tabs[0].id;
-        if (mediaRecorder && startTabId === endTabId) {
-          mediaRecorder.cancelRecording();
-          closeStream(endTabId);
-        }
-      })
-    }
-
-    //removes the audio context and closes recorder to save memory
-    const closeStream = function (endTabId) {
-      chrome.commands.onCommand.removeListener(onStopCommand);
-      chrome.runtime.onMessage.removeListener(onStopClick);
-      mediaRecorder.onTimeout = () => { };
-      audioCtx.close();
-      liveStream.getAudioTracks()[0].stop();
-      sessionStorage.removeItem(endTabId);
-      chrome.runtime.sendMessage({ captureStopped: endTabId });
-    }
-
-    mediaRecorder.onTimeout = stopCapture;
-
-    if (!muteTab) {
-      let audio = new Audio();
-      audio.srcObject = liveStream;
-      audio.play();
-    }
+const audioCapture = async (timeLimit, muteTab, format, quality, limitRemoved) => {
+  console.log("tabCapture@@@");
+  const streamId = await chrome.tabCapture.getMediaStreamId({
+    targetTabId: 9685564232
   });
+  //   chrome.tabCapture.capture({ audio: true }, (stream) => { // sets up stream for capture
+  //     let startTabId; //tab when the capture is started
+  //     let timeout;
+  //     let completeTabID; //tab when the capture is stopped
+  //     let audioURL = null; //resulting object when encoding is completed
+  //     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => startTabId = tabs[0].id) //saves start tab
+  //     const liveStream = stream;
+  //     const audioCtx = new AudioContext();
+  //     const source = audioCtx.createMediaStreamSource(stream);
+  //     let mediaRecorder = new Recorder(source); //initiates the recorder based on the current stream
+  //     mediaRecorder.setEncoding(format); //sets encoding based on options
+  //     if (limitRemoved) { //removes time limit
+  //       mediaRecorder.setOptions({ timeLimit: 10800 });
+  //     } else {
+  //       mediaRecorder.setOptions({ timeLimit: timeLimit / 1000 });
+  //     }
+  //     if (format === "mp3") {
+  //       mediaRecorder.setOptions({ mp3: { bitRate: quality } });
+  //     }
+  //     console.log("start recording...");
+  //     debugger;
+  //     mediaRecorder.startRecording();
+
+  //     function onStopCommand(command) { //keypress
+  //       if (command === "stop") {
+  //         stopCapture();
+  //       }
+  //     }
+  //     function onStopClick(request) { //click on popup
+  //       if (request === "stopCapture") {
+  //         stopCapture();
+  //       } else if (request === "cancelCapture") {
+  //         cancelCapture();
+  //       } else if (request.cancelEncodeID) {
+  //         if (request.cancelEncodeID === startTabId && mediaRecorder) {
+  //           mediaRecorder.cancelEncoding();
+  //         }
+  //       }
+  //     }
+  //     chrome.commands.onCommand.addListener(onStopCommand);
+  //     chrome.runtime.onMessage.addListener(onStopClick);
+  //     mediaRecorder.onComplete = (recorder, blob) => {
+  //       audioURL = window.URL.createObjectURL(blob);
+  //       if (completeTabID) {
+  //         chrome.tabs.sendMessage(completeTabID, { type: "encodingComplete", audioURL });
+  //       }
+  //       mediaRecorder = null;
+  //     }
+  //     mediaRecorder.onEncodingProgress = (recorder, progress) => {
+  //       if (completeTabID) {
+  //         chrome.tabs.sendMessage(completeTabID, { type: "encodingProgress", progress: progress });
+  //       }
+  //     }
+
+  //     const stopCapture = function () {
+  //       let endTabId;
+  //       //check to make sure the current tab is the tab being captured
+  //       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  //         endTabId = tabs[0].id;
+  //         if (mediaRecorder && startTabId === endTabId) {
+  //           mediaRecorder.finishRecording();
+  //           chrome.tabs.create({ url: "complete.html" }, (tab) => {
+  //             completeTabID = tab.id;
+  //             let completeCallback = () => {
+  //               chrome.tabs.sendMessage(tab.id, { type: "createTab", format: format, audioURL, startID: startTabId });
+  //             }
+  //             setTimeout(completeCallback, 500);
+  //           });
+  //           closeStream(endTabId);
+  //         }
+  //       })
+  //     }
+
+  //     const cancelCapture = function () {
+  //       let endTabId;
+  //       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  //         endTabId = tabs[0].id;
+  //         if (mediaRecorder && startTabId === endTabId) {
+  //           mediaRecorder.cancelRecording();
+  //           closeStream(endTabId);
+  //         }
+  //       })
+  //     }
+
+  //     //removes the audio context and closes recorder to save memory
+  //     const closeStream = function (endTabId) {
+  //       chrome.commands.onCommand.removeListener(onStopCommand);
+  //       chrome.runtime.onMessage.removeListener(onStopClick);
+  //       mediaRecorder.onTimeout = () => { };
+  //       audioCtx.close();
+  //       liveStream.getAudioTracks()[0].stop();
+  //       sessionStorage.removeItem(endTabId);
+  //       chrome.runtime.sendMessage({ captureStopped: endTabId });
+  //     }
+
+  //     mediaRecorder.onTimeout = stopCapture;
+
+  //     if (!muteTab) {
+  //       let audio = new Audio();
+  //       audio.srcObject = liveStream;
+  //       audio.play();
+  //     }
+  //   });
 }
 
 async function startAudioCapture() {
@@ -305,8 +309,8 @@ async function startAudioCapture() {
         );
       });
 
-      chrome.runtime.sendMessage({ 
-        action: 'audioCapturing', 
+      chrome.runtime.sendMessage({
+        action: 'audioCapturing',
         payload: {
           currentTab: tabs[0]
         }
@@ -322,13 +326,12 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (request.action === "startAudioCapture" && tabs[0].id === request.currentTab.id) {
-      
+
       startAudioCapture();
     }
   })
 });
 
-importScripts('./worker.js');
 importScripts('./content.js');
