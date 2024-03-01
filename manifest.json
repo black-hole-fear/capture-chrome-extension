@@ -1,16 +1,10 @@
 {
 	"name": "Selection Saver",
 	"description": "Testing Version",
-	"version": "0.1.0",
+	"version": "4.4",
 	"manifest_version": 3,
-	"icons": {
-		"16": "/images/yourarchive_logo.png",
-		"32": "/images/yourarchive_logo.png",
-		"48": "/images/yourarchive_logo.png",
-		"128": "/images/yourarchive_logo.png"
-	},
 	"background": {
-		"service_worker": "./background.js"
+		"service_worker": "background.js"
 	},
 	"content_scripts": [
 		{
@@ -18,8 +12,7 @@
 				"lib/jquery.js",
 				"lib/jquery-ui.js",
 				"lib/color-picker.js",
-				"capture-page.js",
-				"worker.js"
+				"capture-page.js"
 			],
 			"matches": [
 				"http://*/*",
@@ -32,30 +25,12 @@
 			],
 			"js": [
 				"x.js",
-				"content.js",
-				"options.js"
+				"content.js"
 			],
 			"run_at": "document_start"
 		}
 	],
-	"action": {
-		"default_popup": "./popup.html",
-		"default_icons": {
-			"16": "/images/yourarchive_logo.png",
-			"32": "/images/yourarchive_logo.png",
-			"48": "/images/yourarchive_logo.png",
-			"128": "/images/yourarchive_logo.png"
-		},
-		"default_popup_options": {
-			"width": 300,
-			"height": 200,
-			"top": 100,
-			"left": 100
-		}
-	},
-	"options_page": "./options.html",
 	"permissions": [
-		"downloads",
 		"storage",
 		"unlimitedStorage",
 		"activeTab",
@@ -64,23 +39,26 @@
 		"tabs",
 		"audioCapture"
 	],
-	"host_permissions": [
-		"https://*/*"
-	],
-	"commands": {
-		"start": {
-			"suggested_key": {
-				"default": "Ctrl+Shift+S", 
-				"mac": "Command+Shift+U"
-			},
-			"description": "Start Capture"
+	"action": {
+		"default_popup": "popup.html",
+		"default_popup_options": {
+			"width": 300,
+			"height": 200,
+			"top": 100,
+			"left": 100
 		},
-		"stop": {
-			"suggested_key": {
-				"default": "Ctrl+Shift+X",
-				"mac": "MacCtrl+Shift+X"
-			},
-			"description": "Stop Capture"
+		"default_icon": {
+			"16": "/images/yourarchive_logo.png",
+			"32": "/images/yourarchive_logo.png",
+			"48": "/images/yourarchive_logo.png",
+			"128": "/images/yourarchive_logo.png"
 		}
-	}
+	},
+	"icons": {
+		"16": "/images/yourarchive_logo.png",
+		"32": "/images/yourarchive_logo.png",
+		"48": "/images/yourarchive_logo.png",
+		"128": "/images/yourarchive_logo.png"
+	},
+	"options_page": "options.html"
 }
