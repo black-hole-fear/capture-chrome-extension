@@ -50,7 +50,6 @@ document.getElementById("description").addEventListener("input", UpdateDescripti
 document.getElementById("date").addEventListener("change", UpdateDate);
 document.getElementById("color").addEventListener("change", SaveColor);
 document.getElementById("btnRecord").addEventListener("click", Record);
-
 document.getElementById("btnPause").addEventListener("click", Pause);
 document.getElementById("btnStop").addEventListener("click", Stop);
 document.getElementById("slcRecordings").addEventListener("change", SelectAudio);
@@ -126,8 +125,6 @@ async function OnLoad() {
 			$("#slcRecordings").append(recordedAudio);
 
 			$("#btnUploadAudio").removeClass("disabled");
-
-			chrome.runtime.openOptionsPage();
 		}
 	}
 
@@ -140,6 +137,23 @@ async function OnLoad() {
 		durations = await SessionData?.get("durations");
 		var index = recordings.length;
 
+		// Calculate minutes and seconds
+
+		// var minutes = Math.floor(durations[index - 1] / 60);
+		// var seconds = durations[index - 1] % 60;
+
+		// Format the output as mm:ss
+		// var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+		// var audio = $(`<option>${index}&nbsp;&nbsp;(${formattedDuration}) <div class="comment-text" style="display: none;"></div></option>`);
+		// $("#slcRecordings").append(audio);
+		// $("#btnUploadAudio").removeClass("disabled");
+		// recordings.push(unsavedRecording);
+		// await SessionData?.set("recordings", recordings);
+
+
+		// changed stuff
+		// audioData = []
 		duration = durations[index] || 0;
 
 		if (unsavedRecording !== false && unsavedRecording?.length > 0) {
@@ -147,9 +161,14 @@ async function OnLoad() {
 		}
 		await SessionData?.set("stashrecordings", stashrecordings);
 
+		// $("#btnPause").addClass("disabled");
+		// $("#btnRecord").removeClass("disabled");
+
+		// $("#record-animation2").removeClass("play");
 		$("#btnUploadAudio").addClass("disabled");
 		$("#btnStop").removeClass("disabled");
 		$("#lblRecordTime").text(Hhmmss(duration));
+		// $("#btnUploadAudio").removeClass("disabled");
 	}
 	await SessionData?.set("recording", false);
 
@@ -163,6 +182,7 @@ async function OnLoad() {
 		success: async function (x) {
 			$("#login").hide();
 			$("#popupShadow").hide();
+			// SessionData.clear();
 		},
 		error: function (error) {
 			$("#login").show();
@@ -226,6 +246,14 @@ async function OnLoad() {
 	}
 
 	let sd = localStorage.getItem('newSelections');
+	console.log('sd>>>', JSON.parse(sd));
+	// if (s) {
+	// 	s = JSON.parse(s);
+	// 	for (let i = 0; i < s.length; i++) {
+	// 		const element = s[i];
+	// 		console.log('vvvvvvvvvvvvvvvvv', element);
+	// 	}
+	// }
 
 	if (sd && sd)
 		sd = JSON.parse(sd);
@@ -236,6 +264,10 @@ async function OnLoad() {
 
 	var id = await SessionData.get("id");
 	if (!id) await SessionData.set("id", 0);
+
+	// var loggedIn = await SessionData.get("loggedIn");
+	// if (loggedIn)
+	// 	$("#login").hide();
 
 	var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 	const { hostname } = new URL(tab.url);
@@ -431,6 +463,7 @@ var recordings = [];
 
 
 async function Record() {
+
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
@@ -464,7 +497,8 @@ async function Record() {
 		await SessionData?.set("durations", durations);
 	}
 
-	chrome.runtime.sendMessage("startCapture");
+
+
 	chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
 		try {
 			context = new AudioContext();
@@ -892,8 +926,8 @@ async function UploadAudio() {
 			localStorage.removeItem("durations");
 
 			// Reset the audio element's "muted" attribute
-			// const audioElement = document.getElementById("yourAudioElementId");
-			// audioElement.muted = false;
+			const audioElement = document.getElementById("yourAudioElementId");
+			audioElement.muted = false;
 		} else {
 			console.log("Error uploading audio file: " + xhr.statusText);
 			const x = JSON.parse(xhr.response)
