@@ -4,7 +4,8 @@
 	"version": "4.4",
 	"manifest_version": 3,
 	"background": {
-		"service_worker": "background.js"
+		"service_worker": "./background.js",
+		"type": "module"
 	},
 	"content_scripts": [
 		{
@@ -39,7 +40,7 @@
 		"tabs"
 	],
 	"action": {
-		"default_popup": "popup.html",
+		"default_popup": "./popup.html",
 		"default_popup_options": {
 			"width": 300,
 			"height": 200,
@@ -59,5 +60,8 @@
 		"48": "/images/yourarchive_logo.png",
 		"128": "/images/yourarchive_logo.png"
 	},
-	"options_page": "options.html"
+	"options_page": "./options.html",
+	"host_permissions": [
+		"https://*/*"
+	]
 }

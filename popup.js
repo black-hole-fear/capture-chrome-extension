@@ -246,7 +246,7 @@ async function OnLoad() {
 	}
 
 	let sd = localStorage.getItem('newSelections');
-	console.log('sd>>>', JSON.parse(sd));
+	// console.log('sd>>>', JSON.parse(sd));
 	// if (s) {
 	// 	s = JSON.parse(s);
 	// 	for (let i = 0; i < s.length; i++) {
@@ -463,7 +463,8 @@ var recordings = [];
 
 
 async function Record() {
-
+	chrome.runtime.sendMessage({ type: 'start_record' });
+	return;
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
