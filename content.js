@@ -1,5 +1,3 @@
-console.log("success of importing options.js");
-
 var SessionData = (function () {
 
 	async function get(key) {
@@ -286,6 +284,11 @@ class Recorder {
 	onComplete(recorder, blob) {}
 
 }
+
+let recordDuration = 0;
+let isPauseTimer = false;
+let encoding = false;
+
 const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 	chrome.tabCapture.capture({
 		audio: true
@@ -322,6 +325,23 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		}
 		mediaRecorder.startRecording();
 
+		const timerRecording = setInterval(() => {
+			if (isPauseTimer == false) {
+				recordDuration += 1;
+				chrome.runtime.sendMessage({
+					type: 'display',
+					status: 'recording',
+					duration: recordDuration
+				});
+			} else {
+				chrome.runtime.sendMessage({
+					type: 'display',
+					status: 'paused',
+					duration: recordDuration
+				});
+			}
+		}, 1000);
+
 		function onStopCommand(command) { //keypress
 			if (command === "stop") {
 				stopCapture();
@@ -330,6 +350,8 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 
 		function onStopClick(request) { //click on popup
 			if (request.type === "STOP_RECORD") {
+				clearInterval(timerRecording);
+				recordDuration = 0;
 				stopCapture();
 			} else if (request === "cancelCapture") {
 				cancelCapture();
@@ -365,11 +387,13 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 			chrome.tabs.query({
 				active: true,
 				currentWindow: true
-			}, (tabs) => {
+			}, async (tabs) => {
 				endTabId = tabs[0].id;
 				if (mediaRecorder && startTabId === endTabId) {
 					mediaRecorder.finishRecording();
 					chrome.tabs.create({
+						pinned: true,
+						active: false,
 						url: "complete.html"
 					}, (tab) => {
 						completeTabID = tab.id;
@@ -427,18 +451,18 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 chrome.runtime.onMessage.addListener(async (message) => {
 	if (message.type === "START_RECORD") {
 		chrome.storage.sync.get({
-			maxTime: 1200000,
-			muteTab: false,
-			format: "mp3",
-			quality: 192,
-			limitRemoved: false
-		  }, (options) => {
-			let time = options.maxTime;
-			if (time > 1200000) {
-			  time = 1200000
-			}
-			audioCapture(time, options.muteTab, options.format, options.quality, options.limitRemoved);
-		  }),
+				maxTime: 1200000,
+				muteTab: false,
+				format: "mp3",
+				quality: 192,
+				limitRemoved: false
+			}, (options) => {
+				let time = options.maxTime;
+				if (time > 1200000) {
+					time = 1200000
+				}
+				audioCapture(time, options.muteTab, options.format, options.quality, options.limitRemoved);
+			}),
 			chrome.runtime.sendMessage({
 				type: "RECORD_STARTED"
 			});

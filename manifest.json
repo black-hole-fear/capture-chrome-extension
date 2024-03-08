@@ -37,7 +37,8 @@
 		"activeTab",
 		"scripting",
 		"tabCapture",
-		"tabs"
+		"tabs",
+		"downloads"
 	],
 	"action": {
 		"default_popup": "./popup.html",

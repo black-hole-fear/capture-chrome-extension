@@ -59,10 +59,9 @@ function removeTabs(e) {
 
 async function I() {
   const e = await getStorage("optionTabId");
-  console.log("counting tab ids", e);
   typeof e == "number" &&
       chrome.tabs.get(e).catch(() => {
-          // (await removeTabs(optionTabId), chrome.storage.session.remove('optionTabId');
+          // (await removeTabs(optionTabId), chrome.storage.session.remove('optionTabId'))
       });
 }
 
