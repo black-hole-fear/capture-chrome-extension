@@ -36,12 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
         filename: `${currentDate}.${format}`,
         saveAs: true
       });
+      
+      chrome.runtime.sendMessage({
+        type: 'RECORD_STOPPED'
+      });
       chrome.tabs.getCurrent((tab) => {
         chrome.tabs.remove(tab.id);
       });
-      chrome.runtime.sendMessage({
-        type: "RECORD_STOPPED"
-      });
+
       // saveButton.style.display = "inline-block";
     }
   });

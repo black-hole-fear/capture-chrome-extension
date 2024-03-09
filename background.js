@@ -1,3 +1,4 @@
+let getTimerTab = null;
 chrome.runtime.onStartup.addListener(async () => {
   await chrome.storage.session.remove("optionTabId");
 });
@@ -11,7 +12,7 @@ chrome.runtime.onMessage.addListener(async (e) => {
   }
   return (e.type === "OPTIONS_OPENED" && chrome.runtime.sendMessage({ type: "START_RECORD" }),
       e.type === "RECORD_STARTED" &&
-          (setInterval(I, 1e3), d()),
+          (getTimerTab = setInterval(I, 1e3), d()),
       (e.type === "RECORD_STOPPED" || e.type === "DELETE_RECORD") &&
       (await removeOptionTab(optionTabId)),
       !0
@@ -27,6 +28,7 @@ function E() {
 }
 
 async function removeOptionTab(e) {
+  clearInterval(getTimerTab);
   chrome.action.setBadgeText({
       text: ""
   }),
@@ -59,6 +61,7 @@ function removeTabs(e) {
 
 async function I() {
   const e = await getStorage("optionTabId");
+
   typeof e == "number" &&
       chrome.tabs.get(e).catch(() => {
           // (await removeTabs(optionTabId), chrome.storage.session.remove('optionTabId'))
