@@ -199,12 +199,14 @@ class Recorder {
 			this.input.connect(this.processor);
 			this.processor.connect(this.context.destination);
 			this.processor.onaudioprocess = function (event) {
-				for (var ch = 0; ch < numChannels; ++ch)
-					buffer[ch] = event.inputBuffer.getChannelData(ch);
-				worker.postMessage({
-					command: "record",
-					buffer: buffer
-				});
+				if (strRecordStatus === 'RECORDING') {
+					for (var ch = 0; ch < numChannels; ++ch)
+						buffer[ch] = event.inputBuffer.getChannelData(ch);
+					worker.postMessage({
+						command: "record",
+						buffer: buffer
+					});
+				}
 			};
 			this.worker.postMessage({
 				command: "start",
@@ -285,9 +287,11 @@ class Recorder {
 
 }
 
-let recordDuration = 0;
+let nRecordDuration = 0;
 let isPauseTimer = false;
 let encoding = false;
+
+let strRecordStatus = null;
 
 const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 	chrome.tabCapture.capture({
@@ -297,6 +301,7 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		let timeout;
 		let completeTabID; //tab when the capture is stopped
 		let audioURL = null; //resulting object when encoding is completed
+		
 		chrome.tabs.query({
 			active: true,
 			currentWindow: true
@@ -326,18 +331,18 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		mediaRecorder.startRecording();
 
 		const timerRecording = setInterval(() => {
-			if (isPauseTimer == false) {
-				recordDuration += 1;
+			if (strRecordStatus === 'RECORDING') {
+				nRecordDuration += 1;
 				chrome.runtime.sendMessage({
 					type: 'display',
 					status: 'recording',
-					duration: recordDuration
+					duration: nRecordDuration
 				});
-			} else {
+			} else if (strRecordStatus === 'PAUSED') {
 				chrome.runtime.sendMessage({
 					type: 'display',
 					status: 'paused',
-					duration: recordDuration
+					duration: nRecordDuration
 				});
 			}
 		}, 1000);
@@ -350,9 +355,9 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 
 		function onStopClick(request) { //click on popup
 			if (request.type === "STOP_RECORD") {
-				clearInterval(timerRecording);
-				recordDuration = 0;
 				stopCapture();
+				clearInterval(timerRecording);
+				nRecordDuration = 0;
 			} else if (request === "cancelCapture") {
 				cancelCapture();
 			} else if (request.cancelEncodeID) {
@@ -466,5 +471,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
 			chrome.runtime.sendMessage({
 				type: "RECORD_STARTED"
 			});
+	}
+
+	if (message.type === 'record_status') {
+		strRecordStatus = message.payload;
 	}
 });

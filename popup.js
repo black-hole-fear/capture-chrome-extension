@@ -83,13 +83,15 @@ async function OnLoad() {
 			if (request.status === 'recording') {
 				$("#btnRecordCancel").show();
 				$("#btnRecord").addClass("disabled");
-				$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
+				$("#btnStop, #btnPause").removeClass("disabled");
 				$("#record-animation2").addClass("play");
 				$("#lblRecordTime").text(Hhmmss(request.duration));
 				// $("#btnUploadAudio").removeClass("disabled");
 			} else if (request.status === 'paused') {
 				$("#btnPause").addClass("disabled");
 				$("#btnRecord").removeClass("disabled");
+				$("#btnStop").removeClass("disabled");
+				$("#lblRecordTime").text(Hhmmss(request.duration));
 			}
 		}
 	});
@@ -478,7 +480,7 @@ var recordings = [];
 
 
 async function Record() {
-	chrome.runtime.sendMessage({ type: 'INIT_RECORD' });
+	chrome.runtime.sendMessage({ type: 'AUDIO_RECORD' });
 
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
@@ -505,13 +507,13 @@ async function Record() {
 	// 	// durations.push();
 	// 	return;
 	// }
-	let newrecorderonexit = false;
-	if (stashrecordings?.length === 0) {
-		newrecorderonexit = true;
-		durations.push(0);
-		await SessionData?.set("comments", comments)
-		await SessionData?.set("durations", durations);
-	}
+	// let newrecorderonexit = false;
+	// if (stashrecordings?.length === 0) {
+	// 	newrecorderonexit = true;
+	// 	durations.push(0);
+	// 	await SessionData?.set("comments", comments)
+	// 	await SessionData?.set("durations", durations);
+	// }
 
 
 
@@ -797,33 +799,33 @@ async function Pause() {
 	$("#btnRecord").removeClass("disabled");
 	$("#record-animation2").removeClass("play");
 
+	chrome.runtime.sendMessage({ type: 'AUDIO_PAUSE' });
+	// if (recorder.state === 'recording') {
+	// 	// durations.push(duration);
+	// 	recordTime = duration
 
-	if (recorder.state === 'recording') {
-		// durations.push(duration);
-		recordTime = duration
+	// 	durations[durations.length - 1] = duration || 0;
 
-		durations[durations.length - 1] = duration || 0;
+	// 	// await SessionData?.set("durations", durations);
 
-		await SessionData?.set("durations", durations);
+	// 	// clearInterval(recordTimer)
 
-		clearInterval(recordTimer)
+	// 	// console.log("pause ho gya")
+	// 	// await recorder.pause();
 
-		// console.log("pause ho gya")
-		await recorder.pause();
+	// 	// await requestAvailableData();
 
-		// await requestAvailableData();
+	// 	// console.log(recorder);
 
-		// console.log(recorder);
+	// 	// const xyz  = await SessionData.get("recording")
 
-		// const xyz  = await SessionData.get("recording")
+	// 	// console.log("pause ke bad data", xyz);
 
-		// console.log("pause ke bad data", xyz);
+	// 	$("#lblRecordTime").text(Hhmmss(recordTime))
 
-		$("#lblRecordTime").text(Hhmmss(recordTime))
+	// 	await SessionData?.set('pauseRecorderTime', recordTimer)
 
-		await SessionData?.set('pauseRecorderTime', recordTimer)
-
-	}
+	// }
 }
 
 
