@@ -148,51 +148,7 @@ async function OnLoad() {
 			$("#btnUploadAudio").removeClass("disabled");
 		});
 	}
-
-	// var unsavedRecording = await SessionData?.get("recording");
-
-	// stashrecordings = await SessionData.get("stashrecordings") || [];
-
-	// if (unsavedRecording || stashrecordings?.length > 0) {
-
-	// 	durations = await SessionData?.get("durations");
-	// 	var index = recordings.length;
-
-	// Calculate minutes and seconds
-
-	// var minutes = Math.floor(durations[index - 1] / 60);
-	// var seconds = durations[index - 1] % 60;
-
-	// Format the output as mm:ss
-	// var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-
-	// var audio = $(`<option>${index}&nbsp;&nbsp;(${formattedDuration}) <div class="comment-text" style="display: none;"></div></option>`);
-	// $("#slcRecordings").append(audio);
-	// $("#btnUploadAudio").removeClass("disabled");
-	// recordings.push(unsavedRecording);
-	// await SessionData?.set("recordings", recordings);
-
-
-	// changed stuff
-	// audioData = []
-	// duration = durations[index] || 0;
-
-	// if (unsavedRecording !== false && unsavedRecording?.length > 0) {
-	// 	stashrecordings.push(unsavedRecording);
-	// }
-	// await SessionData?.set("stashrecordings", stashrecordings);
-
-	// $("#btnPause").addClass("disabled");
-	// $("#btnRecord").removeClass("disabled");
-
-	// 	// $("#record-animation2").removeClass("play");
-	// 	$("#btnUploadAudio").addClass("disabled");
-	// 	$("#btnStop").removeClass("disabled");
-	// 	$("#lblRecordTime").text(Hhmmss(duration));
-	// 	// $("#btnUploadAudio").removeClass("disabled");
-	// }
-	// await SessionData?.set("recording", false);
-
+	
 	var token = await GetStorage("token");
 	$.ajax({
 		type: "GET",
@@ -514,12 +470,13 @@ async function deleteAudio() {
 		return;
 	}
 
+	recordings = JSON.parse((await chrome.storage.session.get()).recordings);
 	recordings.splice(audioIndex, 1);
 	comments.splice(audioIndex, 1);
 	durations.splice(audioIndex, 1);
 
+	await chrome.storage.session.set({ "recordings": JSON.stringify(recordings) });
 	await SessionData?.set("durations", durations);
-	await SessionData?.set("recordings", recordings);
 	await SessionData?.set("comments", comments);
 
 	$("#slcRecordings option").eq(audioIndex).remove();
@@ -662,6 +619,7 @@ function display() {
 }
 
 async function SelectAudio() {
+	$("#btnUploadAudio").removeClass("disabled");
 	var i = $("#slcRecordings")[0].selectedIndex;
 	_recordings = JSON.parse((await chrome.storage.session?.get()).recordings);
 	$("audio").attr("src", _recordings[i]);
@@ -699,10 +657,6 @@ async function saveToFile(blob, name) {
 	a.click();
 	URL.revokeObjectURL(url);
 	a.remove();
-}
-
-function RecordCancel() {
-	recorder.stop();
 }
 
 function Hhmmss(seconds) {
