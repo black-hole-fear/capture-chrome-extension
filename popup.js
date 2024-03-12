@@ -116,9 +116,7 @@ async function OnLoad() {
 
 		savedRecordings = JSON.parse(savedRecordings);
 
-		savedRecordings.forEach(async (recording, index) => {
-
-			recordings?.push(recording);
+		savedRecordings.forEach(async (_, index) => {
 
 			comments = await SessionData?.get("comments") ?? [];
 			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
@@ -604,8 +602,14 @@ async function editComment() {
 
 /************ */
 async function Stop() {
+	chrome.runtime.sendMessage({
+		type: 'AUDIO_PAUSE'
+	});
 	var comment = prompt("Please enter a comment for the recording:");
 	if (comment === null) {
+		chrome.runtime.sendMessage({
+			type: 'AUDIO_RECORD'
+		});
 		return;
 	}
 
@@ -657,9 +661,10 @@ function display() {
 	$("#btnUploadAudio").removeClass("disabled");
 }
 
-function SelectAudio() {
+async function SelectAudio() {
 	var i = $("#slcRecordings")[0].selectedIndex;
-	$("audio").attr("src", recordings[i]);
+	_recordings = JSON.parse((await chrome.storage.session?.get()).recordings);
+	$("audio").attr("src", _recordings[i]);
 }
 
 /************************************************************************ */

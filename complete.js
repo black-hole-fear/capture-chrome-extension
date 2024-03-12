@@ -30,12 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
       encodeProgress.style.width = `${request.progress * 100}%`;
     }
     async function generateSave(url) { //creates the save button
-      const currentDate = new Date(Date.now()).toDateString();
-      await chrome.downloads.download({
-        url: url,
-        filename: `${currentDate}.${format}`,
-        saveAs: true
-      });
+      // const currentDate = new Date(Date.now()).toDateString();
+      // await chrome.downloads.download({
+      //   url: url,
+      //   filename: `${currentDate}.${format}`,
+      //   saveAs: true
+      // });
       
       chrome.runtime.sendMessage({
         type: 'RECORD_STOPPED'
