@@ -26,7 +26,6 @@ var audioData = [];
 var duration = 0;
 var recordings = [];
 var durations = [];
-var stashrecordings = [];
 
 var comments = [];
 
@@ -58,7 +57,9 @@ document.getElementById("txtAudioDescription").addEventListener("input", TextAud
 
 // document.getElementById("btnMark").addEventListener("click", Mark);
 document.getElementById("btnUploadAudio").addEventListener("click", UploadAudio);
-document.addEventListener('DOMContentLoaded', function () { setTimeout(OnLoad, 0); });
+document.addEventListener('DOMContentLoaded', function () {
+	setTimeout(OnLoad, 0);
+});
 
 document.getElementById("tabAudio").addEventListener("click", () => SelectTab("audio"))
 document.getElementById("tabText").addEventListener("click", () => SelectTab("text"))
@@ -73,10 +74,13 @@ async function OnLoad() {
 	const selectedTab = localStorage.getItem('tab')
 	if (selectedTab && selectedTab === "text") {
 		SelectTab("text")
-	}
-	else if (selectedTab === "audio") { SelectTab("audio") }
-	else if (selectedTab === "video") { SelectTab("video") }
-	else { SelectTab("text") };
+	} else if (selectedTab === "audio") {
+		SelectTab("audio")
+	} else if (selectedTab === "video") {
+		SelectTab("video")
+	} else {
+		SelectTab("text")
+	};
 
 	chrome.runtime.onMessage.addListener((request) => {
 		if (request.type === 'display') {
@@ -86,6 +90,7 @@ async function OnLoad() {
 				$("#btnStop, #btnPause").removeClass("disabled");
 				$("#record-animation2").addClass("play");
 				$("#lblRecordTime").text(Hhmmss(request.duration));
+				duration = request.duration;
 				// $("#btnUploadAudio").removeClass("disabled");
 			} else if (request.status === 'paused') {
 				$("#btnPause").addClass("disabled");
@@ -95,55 +100,56 @@ async function OnLoad() {
 			}
 		}
 	});
-	// recordings
-	// var savedRecordings = await SessionData?.get("recordings");
 
-	// if (savedRecordings && savedRecordings?.length > 0) {
+	comments = await SessionData?.get("comments") ?? [];
+	durations = await SessionData?.get("durations") ?? [];
+	savedRecordings = (await chrome.storage.session?.get()).recordings;
 
-	// 	var description = await SessionData?.get("recordingDescription");
-	// 	durations = await SessionData?.get("durations");
+	console.log("savedRecordings: ", savedRecordings ? JSON.parse(savedRecordings) : null);
 
-	// 	if (description) $("#txtAudioDescription").val(description);
-	// 	for (var [index, recording] of savedRecordings.entries()) {
-	// 		// var blob = await (await fetch(recording)).blob();
+	if (savedRecordings?.length > 0) {
+		var description = await SessionData?.get("recordingDescription");
+		durations = await SessionData?.get("durations");
 
-	// 		recordings?.push(recording);
-	// 		comments = await SessionData?.get("comments") ? await SessionData?.get("comments") : [];
+		if (description) 
+			$("#txtAudioDescription").val(description);
 
-	// 		const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
+		savedRecordings = JSON.parse(savedRecordings);
+		
+		savedRecordings.forEach(async (recording, index) => {
 
-	// 		// Calculate minutes and seconds
-	// 		var minutes = Math.floor(durations[index] / 60);
-	// 		var seconds = durations[index] % 60;
+			recordings?.push(recording);
 
-	// 		// Format the output as mm:ss
-	// 		var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+			comments = await SessionData?.get("comments") ?? [];
+			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
+			// Calculate minutes and seconds
+			var minutes = Math.floor(durations[index] / 60);
+			var seconds = durations[index] % 60;
+			// Format the output as mm:ss
+			var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
-	// 		function breakTextIntoLines(text, maxLength) {
-	// 			let lines = "";
-	// 			for (let i = 0; i < text.length; i += maxLength) {
-	// 				lines += text.substr(i, maxLength);
-	// 			}
-	// 			return lines;
-	// 		}
+			function breakTextIntoLines(text, maxLength) {
+				let lines = "";
+				for (let i = 0; i < text.length; i += maxLength) {
+					lines += text.substr(i, maxLength);
+				}
+				return lines;
+			}
+			// Maximum length for each line of the comment text
+			const maxCommentLineLength = 40;
+			// Break comment text into lines
+			const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+			var recordedAudio = $(`
+				<option style="text-wrap: wrap;">
+					${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+					: ${formattedComment}
+					<div class="comment-text" style="display: none;"></div>
+				</option>`);
+			$("#slcRecordings").append(recordedAudio);
 
-	// 		// Maximum length for each line of the comment text
-	// 		const maxCommentLineLength = 40;
-
-	// 		// Break comment text into lines
-	// 		const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
-	// 		var recordedAudio = $(`
-	// 			<option style="text-wrap: wrap;">
-	// 				${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
-	// 				: ${formattedComment}
-	// 				<div class="comment-text" style="display: none;"></div>
-	// 			</option>`
-	// 		);
-	// 		$("#slcRecordings").append(recordedAudio);
-
-	// 		$("#btnUploadAudio").removeClass("disabled");
-	// 	}
-	// }
+			$("#btnUploadAudio").removeClass("disabled");
+		});
+	}
 
 	// var unsavedRecording = await SessionData?.get("recording");
 
@@ -154,32 +160,32 @@ async function OnLoad() {
 	// 	durations = await SessionData?.get("durations");
 	// 	var index = recordings.length;
 
-		// Calculate minutes and seconds
+	// Calculate minutes and seconds
 
-		// var minutes = Math.floor(durations[index - 1] / 60);
-		// var seconds = durations[index - 1] % 60;
+	// var minutes = Math.floor(durations[index - 1] / 60);
+	// var seconds = durations[index - 1] % 60;
 
-		// Format the output as mm:ss
-		// var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+	// Format the output as mm:ss
+	// var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
-		// var audio = $(`<option>${index}&nbsp;&nbsp;(${formattedDuration}) <div class="comment-text" style="display: none;"></div></option>`);
-		// $("#slcRecordings").append(audio);
-		// $("#btnUploadAudio").removeClass("disabled");
-		// recordings.push(unsavedRecording);
-		// await SessionData?.set("recordings", recordings);
+	// var audio = $(`<option>${index}&nbsp;&nbsp;(${formattedDuration}) <div class="comment-text" style="display: none;"></div></option>`);
+	// $("#slcRecordings").append(audio);
+	// $("#btnUploadAudio").removeClass("disabled");
+	// recordings.push(unsavedRecording);
+	// await SessionData?.set("recordings", recordings);
 
 
-		// changed stuff
-		// audioData = []
-		// duration = durations[index] || 0;
+	// changed stuff
+	// audioData = []
+	// duration = durations[index] || 0;
 
-		// if (unsavedRecording !== false && unsavedRecording?.length > 0) {
-		// 	stashrecordings.push(unsavedRecording);
-		// }
-		// await SessionData?.set("stashrecordings", stashrecordings);
+	// if (unsavedRecording !== false && unsavedRecording?.length > 0) {
+	// 	stashrecordings.push(unsavedRecording);
+	// }
+	// await SessionData?.set("stashrecordings", stashrecordings);
 
-		// $("#btnPause").addClass("disabled");
-		// $("#btnRecord").removeClass("disabled");
+	// $("#btnPause").addClass("disabled");
+	// $("#btnRecord").removeClass("disabled");
 
 	// 	// $("#record-animation2").removeClass("play");
 	// 	$("#btnUploadAudio").addClass("disabled");
@@ -191,8 +197,11 @@ async function OnLoad() {
 
 	var token = await GetStorage("token");
 	$.ajax({
-		type: "GET", url: `${API_URL + "/ext/val"}`, dataType: "json",
-		async: false, contentType: 'application/json',
+		type: "GET",
+		url: `${API_URL + "/ext/val"}`,
+		dataType: "json",
+		async: false,
+		contentType: 'application/json',
 		beforeSend: function (xhr) {
 			xhr.setRequestHeader("Authorization", "bearer " + token);
 		},
@@ -209,11 +218,19 @@ async function OnLoad() {
 
 	// check if article has already been saved
 	var token = await GetStorage("token");
-	var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	var [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	$.ajax({
-		type: "POST", url: `${API_URL}/ext/article-exists`, dataType: "json",
-		async: false, contentType: 'application/json',
-		data: JSON.stringify({ url: tab.url }),
+		type: "POST",
+		url: `${API_URL}/ext/article-exists`,
+		dataType: "json",
+		async: false,
+		contentType: 'application/json',
+		data: JSON.stringify({
+			url: tab.url
+		}),
 		beforeSend: function (xhr) {
 			xhr.setRequestHeader("Authorization", "bearer " + token);
 		},
@@ -226,7 +243,7 @@ async function OnLoad() {
 				$("#btnCapture").text("Url exists");
 			}
 		},
-		error: function (error) { }
+		error: function (error) {}
 	});
 
 	var meta = await GetMeta();
@@ -240,7 +257,8 @@ async function OnLoad() {
 	var saved = await SessionData.get("saved");
 	var dateTimeNow = (new Date().toISOString().slice(0, 16));
 
-	if (date) $("#date").val(date); else $('#date').val(dateTimeNow);
+	if (date) $("#date").val(date);
+	else $('#date').val(dateTimeNow);
 	if (title) $("#title").val(title);
 
 	$('#title').attr('title', `${title || meta.title}`);
@@ -253,8 +271,14 @@ async function OnLoad() {
 		$("#btnSaveArticle").addClass('disabled');
 	}
 
-	$(".color").unbind().click(function () { SelectColor(this) });
-	$('#percent').on('mousedown', function (e) { e = e || window.event; e.preventDefault(); $("#percent").select() });
+	$(".color").unbind().click(function () {
+		SelectColor(this)
+	});
+	$('#percent').on('mousedown', function (e) {
+		e = e || window.event;
+		e.preventDefault();
+		$("#percent").select()
+	});
 	$('#percent').on('input', CheckSelectionActive);
 
 	if (await HasActiveSelection()) {
@@ -263,14 +287,6 @@ async function OnLoad() {
 	}
 
 	let sd = localStorage.getItem('newSelections');
-	// console.log('sd>>>', JSON.parse(sd));
-	// if (s) {
-	// 	s = JSON.parse(s);
-	// 	for (let i = 0; i < s.length; i++) {
-	// 		const element = s[i];
-	// 		console.log('vvvvvvvvvvvvvvvvv', element);
-	// 	}
-	// }
 
 	if (sd && sd)
 		sd = JSON.parse(sd);
@@ -282,12 +298,13 @@ async function OnLoad() {
 	var id = await SessionData.get("id");
 	if (!id) await SessionData.set("id", 0);
 
-	// var loggedIn = await SessionData.get("loggedIn");
-	// if (loggedIn)
-	// 	$("#login").hide();
-
-	var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-	const { hostname } = new URL(tab.url);
+	var [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
+	const {
+		hostname
+	} = new URL(tab.url);
 	UrlSettings.initialize();
 	if (UrlSettings.exists(hostname)) {
 		$("#static-capture").prop('checked', true);
@@ -304,7 +321,10 @@ async function Login() {
 		url: `${API_URL}/ext/login`,
 		type: "POST",
 		dataType: 'json',
-		data: { email, password },
+		data: {
+			email,
+			password
+		},
 		success: async function (data) {
 			console.log('datadatadatadata>>>>>>', data);
 			localStorage.setItem('loggedUsername', email);
@@ -397,8 +417,7 @@ const addBgColor = (tab) => {
 		$("#btnrecording").css("background", "#FFC90E");
 
 
-	}
-	else {
+	} else {
 		$("#tabText").css("background", "#FFC90E");
 		$("#tabAudio").css("background", "#FFC90E");
 		$("#btnrecording").css("background", "#333");
@@ -428,8 +447,7 @@ async function SelectTab(tab) {
 		$("#articlePanel").hide();
 		$("#description").hide();
 
-	}
-	else if (tab === "text") {
+	} else if (tab === "text") {
 		// $("#tabsPanel").css("background-image", "linear-gradient(-135deg, #FFC90E 70%, #bbb 70%)");
 		// $("#tabSelected").attr("style", "background-image: linear-gradient(-135deg, #333 70%, #FFC90E 70%) !important");
 
@@ -444,9 +462,7 @@ async function SelectTab(tab) {
 		$("#articlePanel").show();
 		$("#audioPanel").hide();
 		$("#description").show();
-	}
-
-	else if (tab === "video") {
+	} else if (tab === "video") {
 		// $("#tabsPanel").css("background-image", "linear-gradient(-135deg, #FFC90E 70%, #bbb 70%)");
 		// $("#tabSelected").attr("style", "background-image: linear-gradient(-135deg, #333 70%, #FFC90E 70%) !important");
 
@@ -470,187 +486,24 @@ async function SelectTab(tab) {
 
 
 let x
-var recordTimer;
-var recordTime = 0
+// var recordTimer;
+// var recordTime = 0
 const MIN_BLOB_SIZE = 5000000;
 var partSize = 0;
 var parts = [];
-var comments = [];
-var recordings = [];
+// var comments = [];
+// var recordings = [];
 
 
 async function Record() {
-	chrome.runtime.sendMessage({ type: 'AUDIO_RECORD' });
+	chrome.runtime.sendMessage({
+		type: 'AUDIO_RECORD'
+	});
 
 	$("#btnRecordCancel").show();
 	$("#btnRecord").addClass("disabled");
 	$("#btnStop, #btnPause, #btnMark").removeClass("disabled");
 	$("#record-animation2").addClass("play");
-
-	// await SessionData?.set("recording", []);
-
-	// if (recorder?.state === undefined) {
-	// 	await SessionData?.set("durations", []);
-	// }
-
-	// if (recorder?.state === "paused") {
-	// 	recorder.resume();
-
-	// 	recordTimer = setInterval(async function () {
-	// 		await SessionData?.set("durations", recordTime);
-	// 		duration += 1;
-
-	// 		await recorder.requestData();
-
-	// 		$("#lblRecordTime").text(Hhmmss(recordTime += 1));
-	// 	}, 1000);
-	// 	// durations.push();
-	// 	return;
-	// }
-	// let newrecorderonexit = false;
-	// if (stashrecordings?.length === 0) {
-	// 	newrecorderonexit = true;
-	// 	durations.push(0);
-	// 	await SessionData?.set("comments", comments)
-	// 	await SessionData?.set("durations", durations);
-	// }
-
-
-
-	// chrome.tabCapture.capture({ audio: true, video: false }, async (stream) => {
-	// 	try {
-	// 		context = new AudioContext();
-	// 		var newStream = context.createMediaStreamSource(stream);
-	// 		newStream.connect(context.destination);
-	// 		recorder = new MediaRecorder(stream);
-	// 	} catch (err) {
-	// 		// if(!newrecorderonexit) return
-
-	// 		if (newrecorderonexit) {
-	// 			durations.pop();
-	// 			await SessionData.set("durations", durations);
-	// 			// await SessionData.set("durations", durations);
-	// 			let comments = await SessionData?.get("comments") ? SessionData?.get("comments") : [];
-	// 			// if (comments.length > 0) comments.pop();
-	// 			await SessionData?.set("comments", comments);
-	// 		}
-
-	// 		$("#btnPause, #btnStop, #btnMark").addClass("disabled");
-	// 		$("#btnRecord").removeClass("disabled");
-	// 		if (newrecorderonexit) $("#lblRecordTime").text("00:00:00");
-	// 		$("#record-animation2").removeClass("play");
-
-	// 		alert("No tab is selected, Once select the tab.");
-	// 		return;
-	// 	}
-
-	// 	recorder.ondataavailable = async (e) => {
-
-	// 		audioData.push(e.data);
-
-	// 		durations[durations.length - 1] = duration;
-	// 		var base64 = await blobToBase64(new Blob(audioData, { type: 'audio/wav' }));
-
-	// 		// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-
-	// 		// console.log("base64 data aaa gya", base64);
-
-	// 		await SessionData?.set("recording", base64); // yha pr base64
-	// 		await SessionData?.set("durations", durations);
-
-
-	// 		if (recorder.state === "inactive")
-	// 			await SessionData?.set("recording", false);
-	// 	};
-
-	// 	recorder.onpause = async (e) => {
-	// 		// console.log(e);
-	// 		await recorder.requestData();
-	// 	}
-
-	// 	recorder.onstop = async (e) => {
-
-
-	// 		var base64 = await blobToBase64(new Blob(audioData, { type: 'audio/wav' }));
-	// 		// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-
-	// 		if (stashrecordings?.length > 0) {
-	// 			let whole_recordings = stashrecordings[0];
-	// 			whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
-	// 			for (let i = 1; i < stashrecordings?.length; i++) {
-	// 				whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i]);
-	// 				// whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
-
-	// 				// console.log("whole_recordings", whole_recordings);
-	// 			}
-	// 			base64 = await mergeBase64Audio(whole_recordings, base64);
-	// 			// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-	// 		}
-	// 		// base64 = await mergeRecordings([base64, ...stashrecordings]);
-	// 		// base64 = await mergeBase64Audio([base64, stashrecordings[0]]);
-
-	// 		recordings.push(base64);
-	// 		durations[durations.length - 1] = duration;
-	// 		await SessionData?.set("recordings", recordings);
-	// 		await SessionData?.set("durations", durations);
-
-	// 		stashrecordings = [];
-	// 		await SessionData?.set("stashrecordings", stashrecordings);
-
-	// 		// Calculate minutes and seconds
-	// 		var minutes = Math.floor(durations[durations?.length - 1] / 60);
-	// 		var seconds = durations[durations?.length - 1] % 60;
-
-	// 		// console.log("this is minutes and secnod", minutes, seconds);
-
-	// 		// Format the output as mm:ss
-	// 		var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-
-	// 		let c = localStorage.getItem("durations");
-
-	// 		var comment = comments[comments.length - 1];
-
-	// 		function breakTextIntoLines(text, maxLength) {
-	// 			let lines = "";
-	// 			for (let i = 0; i < text.length; i += maxLength) {
-	// 				lines += text.substr(i, maxLength);
-	// 			}
-	// 			return lines;
-	// 		}
-
-	// 		// Maximum length for each line of the comment text
-	// 		const maxCommentLineLength = 40;
-
-	// 		// Break comment text into lines
-	// 		const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
-	// 		// ${c && c ? c : formattedDuration}
-
-	// 		var audio = $(`
-    //             <option style="text-wrap: wrap;">
-    //                 ${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
-    //                 : ${formattedComment}
-	// 				<div class="comment-text" style="display: none;"></div>
-    //             </option>`
-	// 		);
-
-	// 		$("#slcRecordings")?.append(audio);
-
-	// 		stream.getAudioTracks()[0].stop();
-	// 		$("#btnUploadAudio").removeClass("disabled");
-
-	// 		audioData = [];
-	// 		duration = 0;
-	// 	};
-
-	// 	if (recorder) {
-	// 		recorder?.start();
-	// 		recordTimer = setInterval(async function () {
-	// 			duration += 1;
-	// 			$("#lblRecordTime").text(Hhmmss(duration));
-	// 			await recorder.requestData();
-	// 		}, 1000);
-	// 	}
-	// });
 }
 
 $(document)?.on("click", "#editButton", editComment)
@@ -728,11 +581,11 @@ async function editComment() {
 		var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
 		function breakTextIntoLines(text, maxLength) {
-			const lines = [];
+			let lines = ``;
 			for (let i = 0; i < text.length; i += maxLength) {
-				lines.push(text.substr(i, maxLength));
+				lines += text.substr(i, maxLength);
 			}
-			return lines.join(' ');
+			return lines;
 		}
 
 		// Maximum length for each line of the comment text
@@ -756,36 +609,52 @@ async function Stop() {
 		return;
 	}
 
-	chrome.runtime.sendMessage({ type: 'STOP_RECORD' });
+	chrome.runtime.sendMessage({
+		type: 'AUDIO_STOP'
+	});
 
 	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
 	$("#btnRecord").removeClass("disabled");
 
 	$("#lblRecordTime").text("00:00:00");
 	$("#record-animation2").removeClass("play");
-	recording = false;
-	recordTime = 0;
-	// clearInterval(recordTimer);
 
-	// if (!recorder) {
-	// 	recorderonstopnull();
-	// } else if (recorder?.state === "recording") {
-	// 	await recorder.requestData();
-	// 	await recorder.stop();
-	// 	await SessionData?.set('pauseRecorderTime', 0);
-	// } else if (recorder?.state === "paused") {
-	// 	await recorder.requestData();
-	// 	await recorder.stop();
-	// 	await SessionData?.set('pauseRecorderTime', 0);
-	// }
-
-	// comments[comments.length - 1] = comment;
-	comments.push(comment);
-
+	comments[comments.length] = comment;
+	durations?.push(duration);
 	// Save the comments to localStorage
 	await SessionData?.set("comments", comments);
 	await SessionData?.set("durations", durations);
-	await SessionData?.set("recordings", recordings);
+
+	display();
+}
+
+function display() {
+	var minutes = Math.floor(durations[durations?.length - 1] / 60);
+	var seconds = durations[durations?.length - 1] % 60;
+
+	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+	var comment = comments[comments.length - 1];
+
+	function breakTextIntoLines(text, maxLength) {
+		let lines = "";
+		for (let i = 0; i < text.length; i += maxLength) {
+			lines += text.substr(i, maxLength);
+		}
+		return lines;
+	}
+
+	const maxCommentLineLength = 40;
+	const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+	var audio = $(`
+                <option style="text-wrap: wrap;">
+                    ${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+                    : ${formattedComment}
+					<div class="comment-text" style="display: none;"></div>
+                </option>`);
+
+	$("#slcRecordings")?.append(audio);
+	$("#btnUploadAudio").removeClass("disabled");
 }
 
 function SelectAudio() {
@@ -799,35 +668,10 @@ async function Pause() {
 	$("#btnRecord").removeClass("disabled");
 	$("#record-animation2").removeClass("play");
 
-	chrome.runtime.sendMessage({ type: 'AUDIO_PAUSE' });
-	// if (recorder.state === 'recording') {
-	// 	// durations.push(duration);
-	// 	recordTime = duration
-
-	// 	durations[durations.length - 1] = duration || 0;
-
-	// 	// await SessionData?.set("durations", durations);
-
-	// 	// clearInterval(recordTimer)
-
-	// 	// console.log("pause ho gya")
-	// 	// await recorder.pause();
-
-	// 	// await requestAvailableData();
-
-	// 	// console.log(recorder);
-
-	// 	// const xyz  = await SessionData.get("recording")
-
-	// 	// console.log("pause ke bad data", xyz);
-
-	// 	$("#lblRecordTime").text(Hhmmss(recordTime))
-
-	// 	await SessionData?.set('pauseRecorderTime', recordTimer)
-
-	// }
+	chrome.runtime.sendMessage({
+		type: 'AUDIO_PAUSE'
+	});
 }
-
 
 function blobToBase64(blob) {
 	return new Promise((resolve, _) => {
@@ -884,7 +728,10 @@ async function UploadAudio() {
 
 	progressBars.style.display = "block";
 
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	const url = new URL(tab.url).toString();
 	const title = tab.title || "";
 
@@ -927,7 +774,6 @@ async function UploadAudio() {
 			$("#slcRecordings").html("");
 			await SessionData?.set("recordingDescription", "");
 			await SessionData?.set("recordings", []);
-			await SessionData?.set("stashrecordings", []);
 			await SessionData?.set("durations", []);
 			setTimeout(() => $("#btnUploadAudio").text("Upload"), 2000);
 			localStorage.removeItem("texAudio");
@@ -938,7 +784,6 @@ async function UploadAudio() {
 			comments = []
 			durations = []
 			recordings = []
-			stashrecordings = []
 
 			// localStorage.removeItem("comments");
 			await SessionData?.set("comments", []);
@@ -978,8 +823,7 @@ async function UploadAudio() {
 					if (xhr.statusText == 200) {
 						successMessage.style.display = "block";
 						uploadingMessage.style.display = "none";
-					}
-					else {
+					} else {
 						successMessage.style.display = "none";
 						uploadingMessage.style.display = "none";
 					}
@@ -1011,14 +855,14 @@ async function UploadAudio() {
 }
 
 async function cancelUpload() {
-	recorder.stop();
+	// recorder.stop();
 	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
 	$("#btnRecord").removeClass("disabled");
 	$("#lblRecordTime").text("00:00:00");
 	$("#record-animation2").removeClass("play");
-	recording = false;
-	recordTime = 0;
-	clearInterval(recordTimer);
+	// recording = false;
+	// recordTime = 0;
+	// clearInterval(recordTimer);
 	audioData = [];
 	duration = 0;
 	progressBar.style.width = "0%";
@@ -1044,7 +888,9 @@ function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
 		byteArrays.push(byteArray);
 	}
 
-	const blob = new Blob(byteArrays, { type: contentType });
+	const blob = new Blob(byteArrays, {
+		type: contentType
+	});
 	return blob;
 }
 
@@ -1054,7 +900,10 @@ document.getElementById("description").value = capturetextDescription
 
 async function SaveArticle() {
 	if ($("#btnSaveArticle").text() === "Url exists") {
-		var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		var [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		window.open(`${WEBSITE_URL}/user?open=${tab.url}`);
 		return;
 	}
@@ -1068,7 +917,10 @@ async function SaveArticle() {
 	var date = new Date($("#date").val()).toISOString().slice(0, 19).replace('T', ' ');
 	const check_later = true;
 
-	var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	var [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var url = (new URL(tab.url)).toString();
 	// if (url.includes("?")) url = url.substring(0, url.indexOf('?'));
 	// if (url.endsWith("/")) url = url.substring(0, url.length - 1);
@@ -1078,8 +930,11 @@ async function SaveArticle() {
 
 	const selections = localStorage.getItem('newSelections')
 	$.ajax({
-		type: "POST", url: `${API_URL}/ext/save-article`, dataType: "json",
-		async: false, contentType: 'application/json',
+		type: "POST",
+		url: `${API_URL}/ext/save-article`,
+		dataType: "json",
+		async: false,
+		contentType: 'application/json',
 
 		data: JSON.stringify({
 			user: username,
@@ -1111,10 +966,16 @@ async function SaveArticle() {
 }
 
 async function GetMeta() {
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var p = new Promise(function (resolve, reject) {
 		chrome.scripting.executeScript({
-			target: { tabId: tab.id }, function: function () {
+			target: {
+				tabId: tab.id
+			},
+			function: function () {
 				var metas = document.getElementsByTagName('meta');
 				var title, date;
 				for (var x of metas)
@@ -1125,7 +986,10 @@ async function GetMeta() {
 							date = x.getAttribute("content");
 					}
 
-				return { title, date };
+				return {
+					title,
+					date
+				};
 			}
 		}, function (response) {
 			resolve(response[0].result);
@@ -1147,68 +1011,107 @@ async function GetStorage(key) {
 async function SetStorage(key, value) {
 	var data = {};
 	data[key] = value;
-	await chrome?.storage?.local?.set(data, function () { });
+	await chrome?.storage?.local?.set(data, function () {});
 }
 
 async function ClearStorage(key) {
 	var data = {};
 	data[key] = null;
-	await chrome?.storage?.local?.set(data, function () { });
+	await chrome?.storage?.local?.set(data, function () {});
 }
 
 var SessionData = (function () {
 	async function get(key) {
-		const [tab] = await chrome?.tabs?.query({ active: true, currentWindow: true });
+		const [tab] = await chrome?.tabs?.query({
+			active: true,
+			currentWindow: true
+		});
 		var p = new Promise(function (resolve, reject) {
 			chrome.scripting.executeScript({
-				target: { tabId: tab.id }, args: [key], function: function (key) {
+				target: {
+					tabId: tab.id
+				},
+				args: [key],
+				function: function (key) {
 					window.SessionData = window.SessionData || {};
 					return window.SessionData[key];
 				}
-			}, function (response) { resolve(response[0]?.result); });
+			}, function (response) {
+				resolve(response[0]?.result);
+			});
 		});
 		var data = await p;
 		return data;
 	}
 
 	async function set(key, value) {
-		const [tab] = await chrome?.tabs?.query({ active: true, currentWindow: true });
+		const [tab] = await chrome?.tabs?.query({
+			active: true,
+			currentWindow: true
+		});
 		var p = new Promise(function (resolve, reject) {
 			chrome.scripting.executeScript({
-				target: { tabId: tab.id }, args: [key, value], function: function (key, value) {
+				target: {
+					tabId: tab.id
+				},
+				args: [key, value],
+				function: function (key, value) {
 					window.SessionData = window.SessionData || {};
 					window.SessionData[key] = value;
 				}
-			}, function (response) { resolve(response[0].result); });
+			}, function (response) {
+				resolve(response[0].result);
+			});
 		});
 	}
 	async function clear() {
-		const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		const [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		var p = new Promise(function (resolve, reject) {
 			chrome.scripting.executeScript({
-				target: { tabId: tab.id }, function: function () {
+				target: {
+					tabId: tab.id
+				},
+				function: function () {
 					window.SessionData = {};
 				}
-			}, function (response) { resolve(response[0].result); });
+			}, function (response) {
+				resolve(response[0].result);
+			});
 		});
 	}
 
 	async function removeData(key, index) {
-		const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		const [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		var p = new Promise(function (resolve, reject) {
 			chrome.scripting.executeScript({
-				target: { tabId: tab.id }, function: function () {
+				target: {
+					tabId: tab.id
+				},
+				function: function () {
 					window.SessionData = window.SessionData
 					return window.SessionData.recordings.splice(index, 1);
 				}
-			}, function (response) { resolve(response[0]?.result); });
+			}, function (response) {
+				resolve(response[0]?.result);
+			});
 		});
 		var data = await p;
 		return data;
 	}
 
 
-	return { get, set, clear, removeData };
+	return {
+		get,
+		set,
+		clear,
+		removeData
+	};
 })();
 
 
@@ -1233,8 +1136,7 @@ async function UpdateDate() {
 async function CheckSelectionActive() {
 	if (parseInt($("#percent").val()) > 0 && await HasActiveSelection()) {
 		$("#btnAdd").removeClass("disabled");
-	}
-	else {
+	} else {
 		$("#btnAdd").addClass("disabled");
 	}
 
@@ -1244,8 +1146,13 @@ async function CheckSelectionActive() {
 }
 
 async function SetStaticCapture() {
-	var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-	const { hostname } = new URL(tab.url);
+	var [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
+	const {
+		hostname
+	} = new URL(tab.url);
 	if ($("#static-capture").prop('checked'))
 		UrlSettings.add(hostname);
 	else
@@ -1288,7 +1195,12 @@ var UrlSettings = (function () {
 			localStorage.setItem(key, JSON.stringify(["twitter.com"]));
 	}
 
-	return { add: add, exists: exists, remove: remove, initialize: initialize };
+	return {
+		add: add,
+		exists: exists,
+		remove: remove,
+		initialize: initialize
+	};
 })();
 
 
@@ -1317,7 +1229,9 @@ async function SeeSelections() {
 	$(".removeSelection").unbind().click(async function () {
 		var connections = await SessionData.get("connections");
 		var id = $(this).closest("li").data("id");
-		connections = connections.filter(function (obj) { return obj.id !== id; });
+		connections = connections.filter(function (obj) {
+			return obj.id !== id;
+		});
 		SessionData.set("connections", connections);
 		$(this).closest("li").remove();
 	});
@@ -1326,7 +1240,10 @@ async function SeeSelections() {
 
 async function Capture() {
 	if ($("#btnSaveArticle").text() === "Url exists") {
-		var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		var [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		window.open(`${WEBSITE_URL}/user?open=${tab.url}`);
 		return;
 	}
@@ -1340,7 +1257,10 @@ async function Capture() {
 		}
 
 		quality = parseInt(q);
-		var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		var [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		currentTab = tab;
 		var filename = getFilename(tab.url);
 
@@ -1354,15 +1274,23 @@ async function Capture() {
 		$("#btnCapture").addClass('disabled');
 
 
-		await chrome.scripting.executeScript({ target: { tabId: tab.id }, function: function () { document.getSelection().removeAllRanges(); } });
-		await chrome.tabs.captureVisibleTab(tab.windowId, { "format": "png" }, function (img) {
+		await chrome.scripting.executeScript({
+			target: {
+				tabId: tab.id
+			},
+			function: function () {
+				document.getSelection().removeAllRanges();
+			}
+		});
+		await chrome.tabs.captureVisibleTab(tab.windowId, {
+			"format": "png"
+		}, function (img) {
 			var a = document.createElement("a");
 			a.href = img;
 			// a.download = "Image.png";
 			a.click();
 		});
-	}
-	catch (e) {
+	} catch (e) {
 		alert(e);
 		return null;
 	}
@@ -1379,10 +1307,17 @@ async function SelectColor(e) {
 }
 
 async function SetColor(color, id) {
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var p = new Promise(function (resolve, reject) {
 		chrome.scripting.executeScript({
-			target: { tabId: tab.id }, args: [color, id], function: function (color, id) {
+			target: {
+				tabId: tab.id
+			},
+			args: [color, id],
+			function: function (color, id) {
 				var text = window.getSelection().toString();
 				const selectedRange = window.getSelection().getRangeAt(0);
 				const span = document.createElement('span');
@@ -1391,13 +1326,18 @@ async function SetColor(color, id) {
 				selectedRange.surroundContents(span);
 				document.getSelection().removeAllRanges();
 			}
-		}, function (response) { resolve(response[0].result); });
+		}, function (response) {
+			resolve(response[0].result);
+		});
 	});
 	await p;
 }
 
 function Website() {
-	var data = btoa(JSON.stringify({ username, password }));
+	var data = btoa(JSON.stringify({
+		username,
+		password
+	}));
 	// window.open(`http://beta.saveyournews.com?access=${data}`);
 	window.open(`${WEBSITE_URL}`);
 
@@ -1418,16 +1358,28 @@ async function Connect() {
 	var connections = await SessionData?.get("connections");
 	if (!connections) connections = [];
 
-	connections.push({ id: id, text1: items[0], text2: items[1], ids: ids, percentage: percent });
+	connections.push({
+		id: id,
+		text1: items[0],
+		text2: items[1],
+		ids: ids,
+		percentage: percent
+	});
 	await SessionData?.set("connections", connections);
 	$("#percent").val(0);
 }
 
 async function GetSelectedText() {
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var p = new Promise(function (resolve, reject) {
 		chrome.scripting.executeScript({
-			target: { tabId: tab.id }, function: function () {
+			target: {
+				tabId: tab.id
+			},
+			function: function () {
 				if (!window.selections) window.selections = [];
 				var text = window.getSelection().toString();
 				if (text) window.selections.push(text);
@@ -1480,13 +1432,17 @@ async function AddSelection(text, color, percentage, id) {
 			SetColor(color, id);
 			var selections = await SessionData.get("selections")
 			if (!selections) selections = [];
-			selections.push({ id: id, text: text, color: color, percentage: percentage })
+			selections.push({
+				id: id,
+				text: text,
+				color: color,
+				percentage: percentage
+			})
 			// await SessionData.set("selections", selections)
 			const previousArray = JSON.parse(localStorage.getItem("newSelections"))
 			if (!previousArray) {
 				localStorage.setItem('newSelections', JSON.stringify(selections))
-			}
-			else {
+			} else {
 				const concatenatedArray = previousArray.concat(selections);
 				localStorage.setItem("newSelections", JSON.stringify(concatenatedArray));
 			}
@@ -1498,16 +1454,14 @@ async function AddSelection(text, color, percentage, id) {
 function Selection_OnClick(selection) {
 	if ($(selection).hasClass("selected")) {
 		$(selection).removeClass("selected")
-	}
-	else {
+	} else {
 		if ($("#selections li.selected").length < 2)
 			$(selection).addClass("selected")
 	}
 
 	if ($("#selections li.selected").length === 2 && parseInt($("#percent").val()) > 0) {
 		$("#btnConnect").removeClass("disabled");
-	}
-	else $("#btnConnect").addClass("disabled");
+	} else $("#btnConnect").addClass("disabled");
 }
 
 async function RemoveSelection(selection, id) {
@@ -1542,15 +1496,24 @@ async function RemoveSelection(selection, id) {
 		await SessionData?.set("connections", connections);
 	}
 
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var p = new Promise(function (resolve, reject) {
 		chrome.scripting.executeScript({
-			target: { tabId: tab.id }, args: [id], function: function (id) {
+			target: {
+				tabId: tab.id
+			},
+			args: [id],
+			function: function (id) {
 				var selection = document.querySelector(`#selection-${id}`);
 				if (!selection) return;
 				selection.outerHTML = selection.innerHTML;
 			}
-		}, function (response) { resolve(response[0].result); });
+		}, function (response) {
+			resolve(response[0].result);
+		});
 	});
 
 	await p;
@@ -1580,10 +1543,16 @@ function refreshComments() {
 }
 
 async function HasActiveSelection() {
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
 	var p = new Promise(function (resolve, reject) {
 		chrome.scripting.executeScript({
-			target: { tabId: tab.id }, function: function () {
+			target: {
+				tabId: tab.id
+			},
+			function: function () {
 				var hasSelection = false;
 				var text = window.getSelection().toString();
 				if (text) hasSelection = true;
@@ -1616,8 +1585,13 @@ var currentTab, resultWindowId;
 //
 
 // function Element(id) { return document.getElementById(id); }
-function show(id) { document.getElementById(id).style.display = 'block'; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) {
+	document.getElementById(id).style.display = 'block';
+}
+
+function hide(id) {
+	document.getElementById(id).style.display = 'none';
+}
 
 
 function getFilename(contentURL) {
@@ -1704,7 +1678,10 @@ async function _displayCapture(filenames, index) {
 		var date = new Date($("#date").val()).toISOString().slice(0, 19).replace('T', ' ');
 		var pageDate = meta.date || (new Date().toISOString().slice(0, 16));
 
-		var [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		var [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true
+		});
 		var url = (new URL(tab.url)).toString();
 		if (url.includes("?"))
 			url = url.substring(0, url.indexOf('?'));
@@ -1751,8 +1728,7 @@ function progress(complete) {
 	if (complete === 0) {
 		// Page capture has just been initiated.
 		// show('loading');
-	}
-	else {
+	} else {
 		// document.getElementById('bar').style.width = parseInt(complete * 100, 10) + '%';
 	}
 }
@@ -1802,7 +1778,10 @@ window.Capture = (function () {
 
 
 	function initiateCapture(tab, static, callback) {
-		chrome.tabs.sendMessage(tab.id, { msg: 'scrollPage', static: static }, function () {
+		chrome.tabs.sendMessage(tab.id, {
+			msg: 'scrollPage',
+			static: static
+		}, function () {
 			// We're done taking snapshots of all parts of the window. Display
 			// the resulting full screenshot images in a new browser tab.
 			callback();
@@ -1812,12 +1791,18 @@ window.Capture = (function () {
 
 	function capture(data, screenshots, sendResponse, splitnotifier) {
 		chrome.tabs.captureVisibleTab(
-			null, { format: 'png' }, function (dataURI) {
+			null, {
+				format: 'png'
+			},
+			function (dataURI) {
 				if (dataURI) {
 
 					var image = new Image();
 					image.onload = function () {
-						data.image = { width: image.width, height: image.height };
+						data.image = {
+							width: image.width,
+							height: image.height
+						};
 
 						// given device mode emulation or zooming, we may end up with
 						// a different sized image than expected, so let's adjust to
@@ -1874,8 +1859,8 @@ window.Capture = (function () {
 		// because Chrome won't generate an image otherwise.
 		//
 		var badSize = (totalHeight > MAX_PRIMARY_DIMENSION ||
-			totalWidth > MAX_PRIMARY_DIMENSION ||
-			totalHeight * totalWidth > MAX_AREA),
+				totalWidth > MAX_PRIMARY_DIMENSION ||
+				totalHeight * totalWidth > MAX_AREA),
 			biggerWidth = totalWidth > totalHeight,
 			maxWidth = (!badSize ? totalWidth :
 				(biggerWidth ? MAX_PRIMARY_DIMENSION : MAX_SECONDARY_DIMENSION)),
@@ -1953,7 +1938,9 @@ window.Capture = (function () {
 			}
 
 			// create a blob for writing to a file
-			var blob = new Blob([ab], { type: mimeString });
+			var blob = new Blob([ab], {
+				type: mimeString
+			});
 			return blob;
 		});
 	}
@@ -1978,7 +1965,9 @@ window.Capture = (function () {
 		// create a blob for writing to a file
 		var reqFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 		reqFileSystem(window.TEMPORARY, size, function (fs) {
-			fs.root.getFile(filename, { create: true }, function (fileEntry) {
+			fs.root.getFile(filename, {
+				create: true
+			}, function (fileEntry) {
 				fileEntry.createWriter(function (fileWriter) {
 					fileWriter.onwriteend = onwriteend;
 					fileWriter.write(blob);
@@ -2003,7 +1992,7 @@ window.Capture = (function () {
 			screenshots = [],
 			timeout = 3000,
 			timedOut = false,
-			noop = function () { };
+			noop = function () {};
 
 		callback = callback || noop;
 		errback = errback || noop;
@@ -2032,7 +2021,12 @@ window.Capture = (function () {
 			}
 		});
 
-		chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['capture-page.js'] }, function () {
+		chrome.scripting.executeScript({
+			target: {
+				tabId: tab.id
+			},
+			files: ['capture-page.js']
+		}, function () {
 			if (timedOut) {
 				console.error('Timed out too early while waiting for ' +
 					'chrome.tabs.executeScript. Try increasing the timeout.');
@@ -2081,283 +2075,281 @@ window.Capture = (function () {
 
 
 
-function concatenateBase64Audio(audioData1, audioData2) {
-	// Decode Base64 strings
-	const decodedData1 = atob(audioData1);
-	const decodedData2 = atob(audioData2);
+// function concatenateBase64Audio(audioData1, audioData2) {
+// 	// Decode Base64 strings
+// 	const decodedData1 = atob(audioData1);
+// 	const decodedData2 = atob(audioData2);
 
-	// Convert to ArrayBuffer
-	const arrayBuffer1 = new ArrayBuffer(decodedData1.length);
-	const arrayBuffer2 = new ArrayBuffer(decodedData2.length);
+// 	// Convert to ArrayBuffer
+// 	const arrayBuffer1 = new ArrayBuffer(decodedData1.length);
+// 	const arrayBuffer2 = new ArrayBuffer(decodedData2.length);
 
-	const view1 = new Uint8Array(arrayBuffer1);
-	const view2 = new Uint8Array(arrayBuffer2);
+// 	const view1 = new Uint8Array(arrayBuffer1);
+// 	const view2 = new Uint8Array(arrayBuffer2);
 
-	for (let i = 0; i < decodedData1.length; i++) {
-		view1[i] = decodedData1.charCodeAt(i);
-	}
+// 	for (let i = 0; i < decodedData1.length; i++) {
+// 		view1[i] = decodedData1.charCodeAt(i);
+// 	}
 
-	for (let i = 0; i < decodedData2.length; i++) {
-		view2[i] = decodedData2.charCodeAt(i);
-	}
-
-
-	const mergedArray = new Uint8Array(arrayBuffer1.byteLength + arrayBuffer2.byteLength);
-	mergedArray.set(view1, 0);
-	mergedArray.set(view2, arrayBuffer1.byteLength);
+// 	for (let i = 0; i < decodedData2.length; i++) {
+// 		view2[i] = decodedData2.charCodeAt(i);
+// 	}
 
 
-	const mergedBase64 = btoa(String.fromCharCode.apply(null, mergedArray));
-
-	return mergedBase64;
-}
-
-const recorderonstopnull = async () => {
-	console.log(stashrecordings);
-	if (stashrecordings?.length === 0) return;
-
-	let whole_recordings = stashrecordings[0];
-	whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
-	for (let i = 1; i < stashrecordings?.length; i++) {
-		whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i]);
-	}
-	// base64 = await mergeBase64Audio(whole_recordings, base64)
-	// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
-
-	base64 = whole_recordings;
-
-	recordings.push(base64);
-	await SessionData?.set("recordings", recordings);
-	await SessionData?.set("durations", durations);
-
-	stashrecordings = [];
-	await SessionData?.set("stashrecordings", stashrecordings);
-
-	var index = recordings.length;
-	duration = durations[index - 1] || 0;
-	// Calculate minutes and seconds
-	// var duration = await SessionData?.get('duration');
-	var minutes = Math.floor(duration / 60);
-	var seconds = duration % 60;
-
-	// Format the output as mm:ss
-	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-
-	// let c = localStorage.getItem("durations");
-
-	var comment = comments[comments.length - 1];
-
-	function breakTextIntoLines(text, maxLength) {
-		let lines = '';
-		for (let i = 0; i < text.length; i += maxLength) {
-			lines += text.substr(i, maxLength);
-		}
-		return lines;
-	}
-
-	// Maximum length for each line of the comment text
-	const maxCommentLineLength = 40;
-
-	// Break comment text into lines
-	const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+// 	const mergedArray = new Uint8Array(arrayBuffer1.byteLength + arrayBuffer2.byteLength);
+// 	mergedArray.set(view1, 0);
+// 	mergedArray.set(view2, arrayBuffer1.byteLength);
 
 
-	// ${c && c ? c : formattedDuration}
+// 	const mergedBase64 = btoa(String.fromCharCode.apply(null, mergedArray));
 
-	var audio = $(`
-			<option style="text-wrap: wrap;">
-				${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
-				: ${formattedComment}
-				<div class="comment-text" style="display: none;"></div>
-			</option>`
-	);
+// 	return mergedBase64;
+// }
 
-	$("#slcRecordings")?.append(audio);
-	$("#btnUploadAudio").removeClass("disabled");
+// const recorderonstopnull = async () => {
+// 	console.log(stashrecordings);
+// 	if (stashrecordings?.length === 0) return;
 
-	audioData = [];
-	duration = 0;
-};
+// 	let whole_recordings = stashrecordings[0];
+// 	whole_recordings = whole_recordings.replace("data:application/octet-stream;", "data:audio/wav;");
+// 	for (let i = 1; i < stashrecordings?.length; i++) {
+// 		whole_recordings = await mergeBase64Audio(whole_recordings, stashrecordings[i]);
+// 	}
+// 	// base64 = await mergeBase64Audio(whole_recordings, base64)
+// 	// base64 = base64.replace("data:application/octet-stream;", "data:audio/wav;");
+
+// 	base64 = whole_recordings;
+
+// 	recordings.push(base64);
+// 	await SessionData?.set("recordings", recordings);
+// 	await SessionData?.set("durations", durations);
+
+// 	stashrecordings = [];
+// 	await SessionData?.set("stashrecordings", stashrecordings);
+
+// 	var index = recordings.length;
+// 	duration = durations[index - 1] || 0;
+// 	// Calculate minutes and seconds
+// 	// var duration = await SessionData?.get('duration');
+// 	var minutes = Math.floor(duration / 60);
+// 	var seconds = duration % 60;
+
+// 	// Format the output as mm:ss
+// 	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+// 	// let c = localStorage.getItem("durations");
+
+// 	var comment = comments[comments.length - 1];
+
+// 	function breakTextIntoLines(text, maxLength) {
+// 		let lines = '';
+// 		for (let i = 0; i < text.length; i += maxLength) {
+// 			lines += text.substr(i, maxLength);
+// 		}
+// 		return lines;
+// 	}
+
+// 	// Maximum length for each line of the comment text
+// 	const maxCommentLineLength = 40;
+
+// 	// Break comment text into lines
+// 	const formattedComment = breakTextIntoLines(comment, maxCommentLineLength);
+
+
+// 	// ${c && c ? c : formattedDuration}
+
+// 	var audio = $(`
+// 			<option style="text-wrap: wrap;">
+// 				${$("#slcRecordings option")?.length + 1}&nbsp;&nbsp;(${formattedDuration})  
+// 				: ${formattedComment}
+// 				<div class="comment-text" style="display: none;"></div>
+// 			</option>`);
+
+// 	$("#slcRecordings")?.append(audio);
+// 	$("#btnUploadAudio").removeClass("disabled");
+
+// 	audioData = [];
+// 	duration = 0;
+// };
 
 ////////////////////////////////////////
-///////////
+// ///////////
 
-async function mergeBase64Audio(base64Audio1, base64Audio2) {
-	try {
-		// Convert base64 strings to Blobs
-		const blob1 = await base64ToBlob(base64Audio1);
-		const blob2 = await base64ToBlob(base64Audio2);
+// async function mergeBase64Audio(base64Audio1, base64Audio2) {
+// 	try {
+// 		// Convert base64 strings to Blobs
+// 		const blob1 = await base64ToBlob(base64Audio1);
+// 		const blob2 = await base64ToBlob(base64Audio2);
 
-		// Merge the Blobs
-		// const mergedBlob = new Blob([blob1, blob2], { type: 'audio/wav' });
+// 		// Merge the Blobs
+// 		// const mergedBlob = new Blob([blob1, blob2], { type: 'audio/wav' });
 
-		const mergedBlob = await concatenateAudioBlobs(blob1, blob2);
-		// Convert the merged Blob back to base64
-		const mergedBase64 = await blobToBase64(mergedBlob);
-		return mergedBase64;
-	} catch (error) {
-		console.error('Error merging base64 audio:', error);
-		throw error;
-	}
-}
+// 		const mergedBlob = await concatenateAudioBlobs(blob1, blob2);
+// 		// Convert the merged Blob back to base64
+// 		const mergedBase64 = await blobToBase64(mergedBlob);
+// 		return mergedBase64;
+// 	} catch (error) {
+// 		console.error('Error merging base64 audio:', error);
+// 		throw error;
+// 	}
+// }
 
-// Function to convert base64 to Blob
-function base64ToBlob(base64) {
-	const byteCharacters = atob(base64.split(',')[1]);
-	const byteNumbers = new Array(byteCharacters.length);
+// // Function to convert base64 to Blob
+// function base64ToBlob(base64) {
+// 	const byteCharacters = atob(base64.split(',')[1]);
+// 	const byteNumbers = new Array(byteCharacters.length);
 
-	for (let i = 0; i < byteCharacters.length; i++) {
-		byteNumbers[i] = byteCharacters.charCodeAt(i);
-	}
+// 	for (let i = 0; i < byteCharacters.length; i++) {
+// 		byteNumbers[i] = byteCharacters.charCodeAt(i);
+// 	}
 
-	const byteArray = new Uint8Array(byteNumbers);
-	return new Blob([byteArray]);
-}
-
-
-// This function concatenates two audio blobs
-async function concatenateAudioBlobs(blob1, blob2) {
-	try {
-		// Create an audio context
-		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-		// Decode audio data from the first blob
-		const buffer1 = await decodeAudioBlob(blob1, audioContext);
-		// Decode audio data from the second blob
-		const buffer2 = await decodeAudioBlob(blob2, audioContext);
-		// Log the decoded audio data
-		console.log(buffer1, buffer2);
-		// Concatenate the audio buffers
-		const concatenatedBuffer = concatenateAudioBuffers(buffer1, buffer2, audioContext);
-		// Log the concatenated buffer
-		console.log(concatenatedBuffer);
-		// Encode the concatenated buffer back to a blob
-		const concatenatedBlob = await encodeAudioBufferToBlob(concatenatedBuffer, audioContext);
-		// Close the audio context
-		audioContext.close();
-		// Return the concatenated blob
-		return concatenatedBlob;
-	} catch (error) {
-		// Log and rethrow any errors
-		console.error('Error concatenating audio blobs:', error);
-		throw error;
-	}
-}
-
-function decodeAudioBlob(blob, audioContext) {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-
-		reader.onloadend = async function () {
-			try {
-				const arrayBuffer = reader.result;
-				const buffer = await audioContext.decodeAudioData(arrayBuffer);
-				resolve(buffer);
-			} catch (decodeError) {
-				reject(decodeError);
-			}
-		};
-
-		reader.readAsArrayBuffer(blob);
-	});
-}
-
-function concatenateAudioBuffers(buffer1, buffer2, audioContext) {
-	const numberOfChannels = Math.max(buffer1.numberOfChannels, buffer2.numberOfChannels);
-	const length = buffer1.length + buffer2.length;
-
-	const concatenatedBuffer = audioContext.createBuffer(numberOfChannels, length, buffer1.sampleRate);
-
-	for (let channel = 0; channel < numberOfChannels; channel++) {
-		const channelData = concatenatedBuffer.getChannelData(channel);
-		channelData.set(buffer1.getChannelData(channel), 0);
-		channelData.set(buffer2.getChannelData(channel), buffer1.length);
-	}
-
-	return concatenatedBuffer;
-}
-
-function encodeAudioBufferToBlob(audioBuffer, audioContext) {
-	return new Promise((resolve) => {
-		const numberOfChannels = audioBuffer.numberOfChannels;
-		const sampleRate = audioBuffer.sampleRate;
-		const length = audioBuffer.length;
-		const interleaved = new Float32Array(length * numberOfChannels);
-
-		for (let channel = 0; channel < numberOfChannels; channel++) {
-			const channelData = audioBuffer.getChannelData(channel);
-			for (let i = 0; i < length; i++) {
-				interleaved[i * numberOfChannels + channel] = channelData[i];
-			}
-		}
-
-		const wavData = encodeWAV(interleaved, numberOfChannels, sampleRate);
-		const blob = new Blob([new Uint8Array(wavData)], { type: 'audio/wav' });
-
-		resolve(blob);
-	});
-}
-
-function encodeWAV(samples, numChannels, sampleRate) {
-	const buffer = new ArrayBuffer(44 + samples.length * 2);
-	const view = new DataView(buffer);
-
-	writeString(view, 0, 'RIFF');
-	view.setUint32(4, 36 + samples.length * 2, true);
-	writeString(view, 8, 'WAVE');
-	writeString(view, 12, 'fmt ');
-	view.setUint32(16, 16, true);
-	view.setUint16(20, 1, true);
-	view.setUint16(22, numChannels, true);
-	view.setUint32(24, sampleRate, true);
-	view.setUint32(28, sampleRate * numChannels * 2, true);
-	view.setUint16(32, numChannels * 2, true);
-	view.setUint16(34, 16, true);
-	writeString(view, 36, 'data');
-	view.setUint32(40, samples.length * 2, true);
-
-	floatTo16BitPCM(view, 44, samples);
-
-	return buffer;
-}
-
-function writeString(view, offset, string) {
-	for (let i = 0; i < string.length; i++) {
-		view.setUint8(offset + i, string.charCodeAt(i));
-	}
-}
-
-function floatTo16BitPCM(output, offset, input) {
-	for (let i = 0; i < input.length; i++, offset += 2) {
-		const sample = Math.max(-1, Math.min(1, input[i]));
-		output.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-	}
-}
-
-function createWriter(dataView) {
-	let pos = 0;
-
-	return {
-		string(val) {
-			for (let i = 0; i < val.length; i++) {
-				dataView.setUint8(pos++, val.charCodeAt(i));
-			}
-		},
-		uint16(val) {
-			dataView.setUint16(pos, val, true);
-			pos += 2;
-		},
-		uint32(val) {
-			dataView.setUint32(pos, val, true);
-			pos += 4;
-		},
-		pcm16s: function (value) {
-			value = Math.round(value * 32768);
-			value = Math.max(-32768, Math.min(value, 32767));
-			dataView.setInt16(pos, value, true);
-			pos += 2;
-		},
-	}
-}
+// 	const byteArray = new Uint8Array(byteNumbers);
+// 	return new Blob([byteArray]);
+// }
 
 
+// // This function concatenates two audio blobs
+// async function concatenateAudioBlobs(blob1, blob2) {
+// 	try {
+// 		// Create an audio context
+// 		const audioContext = new(window.AudioContext || window.webkitAudioContext)();
+// 		// Decode audio data from the first blob
+// 		const buffer1 = await decodeAudioBlob(blob1, audioContext);
+// 		// Decode audio data from the second blob
+// 		const buffer2 = await decodeAudioBlob(blob2, audioContext);
+// 		// Log the decoded audio data
+// 		console.log(buffer1, buffer2);
+// 		// Concatenate the audio buffers
+// 		const concatenatedBuffer = concatenateAudioBuffers(buffer1, buffer2, audioContext);
+// 		// Log the concatenated buffer
+// 		console.log(concatenatedBuffer);
+// 		// Encode the concatenated buffer back to a blob
+// 		const concatenatedBlob = await encodeAudioBufferToBlob(concatenatedBuffer, audioContext);
+// 		// Close the audio context
+// 		audioContext.close();
+// 		// Return the concatenated blob
+// 		return concatenatedBlob;
+// 	} catch (error) {
+// 		// Log and rethrow any errors
+// 		console.error('Error concatenating audio blobs:', error);
+// 		throw error;
+// 	}
+// }
 
+// function decodeAudioBlob(blob, audioContext) {
+// 	return new Promise((resolve, reject) => {
+// 		const reader = new FileReader();
+
+// 		reader.onloadend = async function () {
+// 			try {
+// 				const arrayBuffer = reader.result;
+// 				const buffer = await audioContext.decodeAudioData(arrayBuffer);
+// 				resolve(buffer);
+// 			} catch (decodeError) {
+// 				reject(decodeError);
+// 			}
+// 		};
+
+// 		reader.readAsArrayBuffer(blob);
+// 	});
+// }
+
+// function concatenateAudioBuffers(buffer1, buffer2, audioContext) {
+// 	const numberOfChannels = Math.max(buffer1.numberOfChannels, buffer2.numberOfChannels);
+// 	const length = buffer1.length + buffer2.length;
+
+// 	const concatenatedBuffer = audioContext.createBuffer(numberOfChannels, length, buffer1.sampleRate);
+
+// 	for (let channel = 0; channel < numberOfChannels; channel++) {
+// 		const channelData = concatenatedBuffer.getChannelData(channel);
+// 		channelData.set(buffer1.getChannelData(channel), 0);
+// 		channelData.set(buffer2.getChannelData(channel), buffer1.length);
+// 	}
+
+// 	return concatenatedBuffer;
+// }
+
+// function encodeAudioBufferToBlob(audioBuffer, audioContext) {
+// 	return new Promise((resolve) => {
+// 		const numberOfChannels = audioBuffer.numberOfChannels;
+// 		const sampleRate = audioBuffer.sampleRate;
+// 		const length = audioBuffer.length;
+// 		const interleaved = new Float32Array(length * numberOfChannels);
+
+// 		for (let channel = 0; channel < numberOfChannels; channel++) {
+// 			const channelData = audioBuffer.getChannelData(channel);
+// 			for (let i = 0; i < length; i++) {
+// 				interleaved[i * numberOfChannels + channel] = channelData[i];
+// 			}
+// 		}
+
+// 		const wavData = encodeWAV(interleaved, numberOfChannels, sampleRate);
+// 		const blob = new Blob([new Uint8Array(wavData)], {
+// 			type: 'audio/wav'
+// 		});
+
+// 		resolve(blob);
+// 	});
+// }
+
+// function encodeWAV(samples, numChannels, sampleRate) {
+// 	const buffer = new ArrayBuffer(44 + samples.length * 2);
+// 	const view = new DataView(buffer);
+
+// 	writeString(view, 0, 'RIFF');
+// 	view.setUint32(4, 36 + samples.length * 2, true);
+// 	writeString(view, 8, 'WAVE');
+// 	writeString(view, 12, 'fmt ');
+// 	view.setUint32(16, 16, true);
+// 	view.setUint16(20, 1, true);
+// 	view.setUint16(22, numChannels, true);
+// 	view.setUint32(24, sampleRate, true);
+// 	view.setUint32(28, sampleRate * numChannels * 2, true);
+// 	view.setUint16(32, numChannels * 2, true);
+// 	view.setUint16(34, 16, true);
+// 	writeString(view, 36, 'data');
+// 	view.setUint32(40, samples.length * 2, true);
+
+// 	floatTo16BitPCM(view, 44, samples);
+
+// 	return buffer;
+// }
+
+// function writeString(view, offset, string) {
+// 	for (let i = 0; i < string.length; i++) {
+// 		view.setUint8(offset + i, string.charCodeAt(i));
+// 	}
+// }
+
+// function floatTo16BitPCM(output, offset, input) {
+// 	for (let i = 0; i < input.length; i++, offset += 2) {
+// 		const sample = Math.max(-1, Math.min(1, input[i]));
+// 		output.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+// 	}
+// }
+
+// function createWriter(dataView) {
+// 	let pos = 0;
+
+// 	return {
+// 		string(val) {
+// 			for (let i = 0; i < val.length; i++) {
+// 				dataView.setUint8(pos++, val.charCodeAt(i));
+// 			}
+// 		},
+// 		uint16(val) {
+// 			dataView.setUint16(pos, val, true);
+// 			pos += 2;
+// 		},
+// 		uint32(val) {
+// 			dataView.setUint32(pos, val, true);
+// 			pos += 4;
+// 		},
+// 		pcm16s: function (value) {
+// 			value = Math.round(value * 32768);
+// 			value = Math.max(-32768, Math.min(value, 32767));
+// 			dataView.setInt16(pos, value, true);
+// 			pos += 2;
+// 		},
+// 	}
+// }

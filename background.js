@@ -17,6 +17,9 @@ chrome.runtime.onMessage.addListener(async (e) => {
     recordStatus = 'RECORDING';
   } else if (recordStatus === 'RECORDING' && e.type === 'AUDIO_PAUSE') {
     recordStatus = 'PAUSED';
+  } else if (e.type === 'AUDIO_STOP') {
+    recordStatus = 'PAUSED';
+    chrome.runtime.sendMessage({ type: 'STOP_RECORD' });
   }
   
   return (e.type === "OPTIONS_OPENED" && chrome.runtime.sendMessage({ type: "START_RECORD" }),

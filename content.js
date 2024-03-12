@@ -367,8 +367,19 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 			}
 		}
 		chrome.runtime.onMessage.addListener(onStopClick);
-		mediaRecorder.onComplete = (recorder, blob) => {
+		mediaRecorder.onComplete = async (recorder, blob) => {
+			let recordings = [];
+			let chunk = await blobToBase64(blob);
+
+			recordings = (await chrome.storage.session?.get()).recordings ?
+					JSON.parse((await chrome.storage.session?.get()).recordings) : 
+					[];
+
+			recordings.push(chunk);
+			chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
+			
 			audioURL = window.URL.createObjectURL(blob);
+
 			if (completeTabID) {
 				chrome.tabs.sendMessage(completeTabID, {
 					type: "encodingComplete",
@@ -384,6 +395,14 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 					progress: progress
 				});
 			}
+		}
+
+		function blobToBase64(blob) {
+			return new Promise((resolve, _) => {
+				const reader = new FileReader();
+				reader.onloadend = () => resolve(reader.result);
+				reader.readAsDataURL(blob);
+			});
 		}
 
 		const stopCapture = function () {
