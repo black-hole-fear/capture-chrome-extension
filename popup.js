@@ -115,7 +115,7 @@ async function OnLoad() {
 			$("#txtAudioDescription").val(description);
 
 		savedRecordings = JSON.parse(savedRecordings);
-		
+
 		savedRecordings.forEach(async (recording, index) => {
 
 			recordings?.push(recording);
@@ -784,6 +784,7 @@ async function UploadAudio() {
 			comments = []
 			durations = []
 			recordings = []
+			chrome.storage.session.remove("recordings");
 
 			// localStorage.removeItem("comments");
 			await SessionData?.set("comments", []);
