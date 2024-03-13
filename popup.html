@@ -262,8 +262,13 @@
     <textarea id="txtAudioDescription" type="text" placeholder="Description..."></textarea>
     
     <div class="ctl-btns" style="text-align: right; padding-right: 10px; height: 45px; margin-top: -20px;">
-      <button id="editButton" class="disabled">📝</button>
-      <button id="deleteButton" class="disabled">❌</button>
+      <div style="margin-left: 10px;">
+        <button id="options" style="min-width: max-content;">Click for Settings</button>
+      </div>
+      <div>
+        <button id="editButton" class="disabled">📝</button>
+        <button id="deleteButton" class="disabled">❌</button>
+      </div>
     </div>
     <div id="audioPanelControl">
       <select id="slcRecordings" multiple style="height: 180px;"></select>

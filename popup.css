@@ -708,3 +708,8 @@ button.delete-button {
   border-width: 1px;
   border-color: #888;
 }
+
+.ctl-btns {
+  display: flex;
+  justify-content: space-between;
+}

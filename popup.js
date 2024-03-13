@@ -65,6 +65,8 @@ document.getElementById("tabAudio").addEventListener("click", () => SelectTab("a
 document.getElementById("tabText").addEventListener("click", () => SelectTab("text"))
 document.getElementById("btnrecording").addEventListener("click", () => SelectTab("video"))
 
+document.getElementById("options").addEventListener("click", () => { chrome.runtime.openOptionsPage() })
+
 const progressBar = document.getElementById('progress-bar-inner');
 const cancelButton = document.getElementById('cancel-button');
 
