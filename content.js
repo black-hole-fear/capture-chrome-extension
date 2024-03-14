@@ -371,12 +371,12 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 			let recordings = [];
 			let chunk = await blobToBase64(blob);
 
-			recordings = (await chrome.storage.session?.get()).recordings ?
+			recordings = ((await chrome.storage.session?.get()).recordings) ?
 					JSON.parse((await chrome.storage.session?.get()).recordings) : 
 					[];
 
 			recordings.push(chunk);
-			chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
+			await chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
 			
 			audioURL = window.URL.createObjectURL(blob);
 

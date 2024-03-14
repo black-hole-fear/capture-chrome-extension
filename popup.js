@@ -65,6 +65,8 @@ document.getElementById("tabAudio").addEventListener("click", () => SelectTab("a
 document.getElementById("tabText").addEventListener("click", () => SelectTab("text"))
 document.getElementById("btnrecording").addEventListener("click", () => SelectTab("video"))
 
+document.getElementById("options").addEventListener("click", () => { chrome.runtime.openOptionsPage() })
+
 const progressBar = document.getElementById('progress-bar-inner');
 const cancelButton = document.getElementById('cancel-button');
 
@@ -101,15 +103,18 @@ async function OnLoad() {
 		}
 	});
 
-	comments = await SessionData?.get("comments") ?? [];
-	durations = await SessionData?.get("durations") ?? [];
+	comments = await chrome.storage.session?.get().comments ?? '[]';
+	comments = JSON.parse(comments);
+	durations = await chrome.storage.session.get().durations ?? '[]';
+	durations = JSON.parse(durations);
 	savedRecordings = (await chrome.storage.session?.get()).recordings;
 
 	console.log("savedRecordings: ", savedRecordings ? JSON.parse(savedRecordings) : null);
 
 	if (savedRecordings?.length > 0) {
 		var description = await SessionData?.get("recordingDescription");
-		durations = await SessionData?.get("durations");
+		durations = await chrome.storage.session?.get().durations;
+		durations = JSON.parse(durations);
 
 		if (description) 
 			$("#txtAudioDescription").val(description);
@@ -118,7 +123,9 @@ async function OnLoad() {
 
 		savedRecordings.forEach(async (_, index) => {
 
-			comments = await SessionData?.get("comments") ?? [];
+			comments = await chrome.storage.session?.get().comments ?? '[]';
+			comments = JSON.parse(comments);
+
 			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
 			// Calculate minutes and seconds
 			var minutes = Math.floor(durations[index] / 60);
@@ -476,8 +483,8 @@ async function deleteAudio() {
 	durations.splice(audioIndex, 1);
 
 	await chrome.storage.session.set({ "recordings": JSON.stringify(recordings) });
-	await SessionData?.set("durations", durations);
-	await SessionData?.set("comments", comments);
+	await chrome.storage.session?.set({ "durations": JSON.stringify(durations) });
+	await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
 
 	$("#slcRecordings option").eq(audioIndex).remove();
 
@@ -510,6 +517,9 @@ async function editComment() {
 		return;
 	}
 
+	comments = await chrome.storage.session?.get().comments;
+	comments = JSON.parse(comments);
+
 	var commentText = comments[commentIndex];
 	var editedCommentText = prompt("Edit the comment:", commentText);
 	// var editedCommentText = prompt("Edit the comment:", commentText);
@@ -518,7 +528,7 @@ async function editComment() {
 		commentContainer.find(".comment-text").text(editedCommentText);
 		comments[commentIndex] = editedCommentText;
 
-		await SessionData?.set("comments", comments);
+		await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
 
 		const selectedTab = localStorage.getItem("tab");
 
@@ -583,13 +593,13 @@ async function Stop() {
 	comments[comments.length] = comment;
 	durations?.push(duration);
 	// Save the comments to localStorage
-	await SessionData?.set("comments", comments);
-	await SessionData?.set("durations", durations);
+	await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
+	await chrome.storage.session?.set({ "durations": JSON.stringify(durations) });
 
 	display();
 }
 
-function display() {
+ function display() {
 	var minutes = Math.floor(durations[durations?.length - 1] / 60);
 	var seconds = durations[durations?.length - 1] % 60;
 
@@ -733,7 +743,7 @@ async function UploadAudio() {
 			$("#slcRecordings").html("");
 			await SessionData?.set("recordingDescription", "");
 			await SessionData?.set("recordings", []);
-			await SessionData?.set("durations", []);
+			await chrome.storage.session?.set({ "durations": '[]' });
 			setTimeout(() => $("#btnUploadAudio").text("Upload"), 2000);
 			localStorage.removeItem("texAudio");
 
@@ -746,9 +756,9 @@ async function UploadAudio() {
 			chrome.storage.session.remove("recordings");
 
 			// localStorage.removeItem("comments");
-			await SessionData?.set("comments", []);
+			await chrome.storage.session?.set({ "comments": '[]' });
 			localStorage.removeItem("recordings");
-			localStorage.removeItem("durations");
+			await chrome.storage.session?.set({ "durations": '[]' });
 
 			// Reset the audio element's "muted" attribute
 			const audioElement = document.getElementById("yourAudioElementId");
