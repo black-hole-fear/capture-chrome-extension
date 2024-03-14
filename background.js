@@ -77,8 +77,8 @@ async function I() {
 
   chrome.runtime.sendMessage({ type: 'record_status', payload: recordStatus });
   typeof e == "number" &&
-      chrome.tabs.get(e).catch(() => {
-          // (await removeTabs(optionTabId), chrome.storage.session.remove('optionTabId'))
+      chrome.tabs.get(e).catch(async () => {
+          (await removeTabs(optionTabId), chrome.storage.session.remove('optionTabId'))
       });
 }
 

@@ -1,111 +1,6 @@
-var SessionData = (function () {
-
-	async function get(key) {
-		const [tab] = await chrome?.tabs?.query({
-			active: true,
-			currentWindow: true
-		});
-		var p = new Promise(function (resolve, reject) {
-			chrome.scripting.executeScript({
-				target: {
-					tabId: tab.id
-				},
-				args: [key],
-				function: function (key) {
-					window.SessionData = window.SessionData || {};
-					return window.SessionData[key];
-				}
-			}, function (response) {
-				resolve(response[0]?.result);
-			});
-		});
-		var data = await p;
-		return data;
-	}
-
-	async function set(key, value) {
-		const [tab] = await chrome?.tabs?.query({
-			active: true,
-			currentWindow: true
-		});
-		var p = new Promise(function (resolve, reject) {
-			chrome.scripting.executeScript({
-				target: {
-					tabId: tab.id
-				},
-				args: [key, value],
-				function: function (key, value) {
-					window.SessionData = window.SessionData || {};
-					window.SessionData[key] = value;
-				}
-			}, function (response) {
-				resolve(response[0].result);
-			});
-		});
-	}
-	async function clear() {
-		const [tab] = await chrome.tabs.query({
-			active: true,
-			currentWindow: true
-		});
-		var p = new Promise(function (resolve, reject) {
-			chrome.scripting.executeScript({
-				target: {
-					tabId: tab.id
-				},
-				function: function () {
-					window.SessionData = {};
-				}
-			}, function (response) {
-				resolve(response[0].result);
-			});
-		});
-	}
-
-	async function removeData(key, index) {
-		const [tab] = await chrome.tabs.query({
-			active: true,
-			currentWindow: true
-		});
-		var p = new Promise(function (resolve, reject) {
-			chrome.scripting.executeScript({
-				target: {
-					tabId: tab.id
-				},
-				function: function () {
-					window.SessionData = window.SessionData
-					return window.SessionData.recordings.splice(index, 1);
-				}
-			}, function (response) {
-				resolve(response[0]?.result);
-			});
-		});
-		var data = await p;
-		return data;
-	}
-
-	return {
-		get,
-		set,
-		clear,
-		removeData
-	};
-})();
-
 chrome.runtime.sendMessage({
 	type: "OPTIONS_OPENED"
 });
-// async function audioCapture() {
-// 	return new Promise((resolve) => {
-// 		chrome.tabCapture.capture({
-// 			audio: true,
-// 			video: false
-// 		}, (stream) => {
-// 			resolve(stream);
-// 		});
-// 	});
-// }
-
 
 ///////////////////////////
 
@@ -292,6 +187,7 @@ let isPauseTimer = false;
 let encoding = false;
 
 let strRecordStatus = null;
+let timerRecording;
 
 const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 	chrome.tabCapture.capture({
@@ -330,22 +226,7 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		}
 		mediaRecorder.startRecording();
 
-		const timerRecording = setInterval(() => {
-			if (strRecordStatus === 'RECORDING') {
-				nRecordDuration += 1;
-				chrome.runtime.sendMessage({
-					type: 'display',
-					status: 'recording',
-					duration: nRecordDuration
-				});
-			} else if (strRecordStatus === 'PAUSED') {
-				chrome.runtime.sendMessage({
-					type: 'display',
-					status: 'paused',
-					duration: nRecordDuration
-				});
-			}
-		}, 1000);
+		
 
 		function onStopCommand(command) { //keypress
 			if (command === "stop") {
@@ -371,12 +252,12 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 			let recordings = [];
 			let chunk = await blobToBase64(blob);
 
-			recordings = ((await chrome.storage.session?.get()).recordings) ?
+			recordings = (await chrome.storage.session?.get()).recordings ?
 					JSON.parse((await chrome.storage.session?.get()).recordings) : 
 					[];
 
 			recordings.push(chunk);
-			await chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
+			chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
 			
 			audioURL = window.URL.createObjectURL(blob);
 
@@ -474,6 +355,23 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 
 chrome.runtime.onMessage.addListener(async (message) => {
 	if (message.type === "START_RECORD") {
+		timerRecording = setInterval(() => {
+			if (strRecordStatus === 'RECORDING') {
+				nRecordDuration += 1;
+				chrome.runtime.sendMessage({
+					type: 'display',
+					status: 'recording',
+					duration: nRecordDuration
+				});
+			} else if (strRecordStatus === 'PAUSED') {
+				chrome.runtime.sendMessage({
+					type: 'display',
+					status: 'paused',
+					duration: nRecordDuration
+				});
+			}
+		}, 1000);
+
 		chrome.storage.sync.get({
 				maxTime: 1200000,
 				muteTab: false,

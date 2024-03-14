@@ -103,28 +103,29 @@ async function OnLoad() {
 		}
 	});
 
-	comments = await chrome.storage.session?.get().comments ?? '[]';
-	comments = JSON.parse(comments);
-	durations = await chrome.storage.session.get().durations ?? '[]';
-	durations = JSON.parse(durations);
+	comments = await SessionData?.get("comments") ?? [];
+	durations = await SessionData?.get("durations") ?? [];
 	savedRecordings = (await chrome.storage.session?.get()).recordings;
 
 	console.log("savedRecordings: ", savedRecordings ? JSON.parse(savedRecordings) : null);
 
 	if (savedRecordings?.length > 0) {
 		var description = await SessionData?.get("recordingDescription");
-		durations = await chrome.storage.session?.get().durations;
-		durations = JSON.parse(durations);
+		durations = await SessionData?.get("durations");
 
 		if (description) 
 			$("#txtAudioDescription").val(description);
 
 		savedRecordings = JSON.parse(savedRecordings);
 
-		savedRecordings.forEach(async (_, index) => {
+		savedRecordings.forEach(async (recording, index) => {
 
-			comments = await chrome.storage.session?.get().comments ?? '[]';
+			recordings?.push(recording);
+
+			comments = (await chrome.storage.session?.get()).comments ?? '[]';
 			comments = JSON.parse(comments);
+			durations = (await chrome.storage.session?.get()).durations ?? '[]';
+			durations = JSON.parse(durations);
 
 			const comment = index < comments.length ? (comments[index] ? comments[index] : " ") : " ";
 			// Calculate minutes and seconds
@@ -517,8 +518,11 @@ async function editComment() {
 		return;
 	}
 
-	comments = await chrome.storage.session?.get().comments;
+	comments = (await chrome.storage.session?.get()).comments;
 	comments = JSON.parse(comments);
+
+	durations = (await chrome.storage.session?.get()).durations;
+	durations = JSON.parse(durations);
 
 	var commentText = comments[commentIndex];
 	var editedCommentText = prompt("Edit the comment:", commentText);
@@ -592,14 +596,14 @@ async function Stop() {
 
 	comments[comments.length] = comment;
 	durations?.push(duration);
-	// Save the comments to localStorage
+
 	await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
 	await chrome.storage.session?.set({ "durations": JSON.stringify(durations) });
 
 	display();
 }
 
- function display() {
+function display() {
 	var minutes = Math.floor(durations[durations?.length - 1] / 60);
 	var seconds = durations[durations?.length - 1] % 60;
 
@@ -712,8 +716,7 @@ async function UploadAudio() {
 	const token = await GetStorage("token");
 	const formData = new FormData();
 
-	const x = JSON.parse(localStorage.getItem("myRecordingKey"));
-	const audiComment = JSON.parse(localStorage.getItem("tableData"));
+	recordings = JSON.parse((await chrome.storage.session.get()).recordings) ?? [];
 
 	const obj = recordings.reduce((acc, curr, index) => {
 		acc[index] = curr;
@@ -761,8 +764,8 @@ async function UploadAudio() {
 			await chrome.storage.session?.set({ "durations": '[]' });
 
 			// Reset the audio element's "muted" attribute
-			const audioElement = document.getElementById("yourAudioElementId");
-			audioElement.muted = false;
+			// const audioElement = document.getElementById("yourAudioElementId");
+			// audioElement.muted = false;
 		} else {
 			console.log("Error uploading audio file: " + xhr.statusText);
 			const x = JSON.parse(xhr.response)
