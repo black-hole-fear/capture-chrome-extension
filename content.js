@@ -376,7 +376,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
 				maxTime: 1200000,
 				muteTab: false,
 				format: "mp3",
-				quality: 192,
+				quality: 64,
 				limitRemoved: false
 			}, (options) => {
 				let time = options.maxTime;

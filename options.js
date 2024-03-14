@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     muteTab: false,
     maxTime: 1200000,
     format: "mp3",
-    quality: 192,
+    quality: 64,
     limitRemoved: false
   }, (options) => {
     mute.checked = options.muteTab;
@@ -28,9 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       wavSelect.checked = true;
     }
-    if (options.quality === "96") {
+    if (options.quality === "32") {
       quality.selectedIndex = 0;
-    } else if(options.quality === "192") {
+    } else if(options.quality === "64") {
       quality.selectedIndex = 1;
     } else {
       quality.selectedIndex = 2;
