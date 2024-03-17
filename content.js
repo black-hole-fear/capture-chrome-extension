@@ -197,7 +197,7 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		let timeout;
 		let completeTabID; //tab when the capture is stopped
 		let audioURL = null; //resulting object when encoding is completed
-		
+
 		chrome.tabs.query({
 			active: true,
 			currentWindow: true
@@ -226,7 +226,7 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 		}
 		mediaRecorder.startRecording();
 
-		
+
 
 		function onStopCommand(command) { //keypress
 			if (command === "stop") {
@@ -253,12 +253,13 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 			let chunk = await blobToBase64(blob);
 
 			recordings = (await chrome.storage.session?.get()).recordings ?
-					JSON.parse((await chrome.storage.session?.get()).recordings) : 
-					[];
+				JSON.parse((await chrome.storage.session?.get()).recordings) : [];
 
 			recordings.push(chunk);
-			chrome.storage.session?.set({"recordings": JSON.stringify(recordings)});
-			
+			chrome.storage.session?.set({
+				"recordings": JSON.stringify(recordings)
+			});
+
 			audioURL = window.URL.createObjectURL(blob);
 
 			if (completeTabID) {
@@ -373,21 +374,21 @@ chrome.runtime.onMessage.addListener(async (message) => {
 		}, 1000);
 
 		chrome.storage.sync.get({
-				maxTime: 1200000,
-				muteTab: false,
-				format: "mp3",
-				quality: 64,
-				limitRemoved: false
-			}, (options) => {
-				let time = options.maxTime;
-				if (time > 1200000) {
-					time = 1200000
-				}
-				audioCapture(time, options.muteTab, options.format, options.quality, options.limitRemoved);
-			}),
-			chrome.runtime.sendMessage({
-				type: "RECORD_STARTED"
-			});
+			maxTime: 1200000,
+			muteTab: false,
+			format: "mp3",
+			quality: 64,
+			limitRemoved: false
+		}, (options) => {
+			let time = options.maxTime;
+			if (time > 1200000) {
+				time = 1200000
+			}
+			audioCapture(time, options.muteTab, options.format, options.quality, options.limitRemoved);
+		}),
+		chrome.runtime.sendMessage({
+			type: "RECORD_STARTED"
+		});
 	}
 
 	if (message.type === 'record_status') {

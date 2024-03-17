@@ -86,6 +86,7 @@ chrome.runtime.onMessage.addListener((request) => {
 			$("#btnPause").addClass("disabled");
 			$("#btnRecord").removeClass("disabled");
 			$("#btnStop").removeClass("disabled");
+			duration = request.duration;
 			$("#lblRecordTime").text(Hhmmss(request.duration));
 		}
 	}
