@@ -72,6 +72,25 @@ const cancelButton = document.getElementById('cancel-button');
 
 cancelButton.addEventListener('click', cancelUpload)
 
+chrome.runtime.onMessage.addListener((request) => {
+	if (request.type === 'display') {
+		if (request.status === 'recording') {
+			$("#btnRecordCancel").show();
+			$("#btnRecord").addClass("disabled");
+			$("#btnStop, #btnPause").removeClass("disabled");
+			$("#record-animation2").addClass("play");
+			$("#lblRecordTime").text(Hhmmss(request.duration));
+			duration = request.duration;
+			// $("#btnUploadAudio").removeClass("disabled");
+		} else if (request.status === 'paused') {
+			$("#btnPause").addClass("disabled");
+			$("#btnRecord").removeClass("disabled");
+			$("#btnStop").removeClass("disabled");
+			$("#lblRecordTime").text(Hhmmss(request.duration));
+		}
+	}
+});
+
 async function OnLoad() {
 	const selectedTab = localStorage.getItem('tab')
 	if (selectedTab && selectedTab === "text") {
@@ -84,24 +103,6 @@ async function OnLoad() {
 		SelectTab("text")
 	};
 
-	chrome.runtime.onMessage.addListener((request) => {
-		if (request.type === 'display') {
-			if (request.status === 'recording') {
-				$("#btnRecordCancel").show();
-				$("#btnRecord").addClass("disabled");
-				$("#btnStop, #btnPause").removeClass("disabled");
-				$("#record-animation2").addClass("play");
-				$("#lblRecordTime").text(Hhmmss(request.duration));
-				duration = request.duration;
-				// $("#btnUploadAudio").removeClass("disabled");
-			} else if (request.status === 'paused') {
-				$("#btnPause").addClass("disabled");
-				$("#btnRecord").removeClass("disabled");
-				$("#btnStop").removeClass("disabled");
-				$("#lblRecordTime").text(Hhmmss(request.duration));
-			}
-		}
-	});
 
 	comments = await SessionData?.get("comments") ?? [];
 	durations = await SessionData?.get("durations") ?? [];

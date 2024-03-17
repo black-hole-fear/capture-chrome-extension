@@ -354,7 +354,7 @@ const audioCapture = (timeLimit, muteTab, format, quality, limitRemoved) => {
 }
 
 chrome.runtime.onMessage.addListener(async (message) => {
-	if (message.type === "START_RECORD") {
+	if (message.type === "START_RECORD" && !timerRecording) {
 		timerRecording = setInterval(() => {
 			if (strRecordStatus === 'RECORDING') {
 				nRecordDuration += 1;
