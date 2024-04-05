@@ -160,11 +160,13 @@ window.Capture = (function () {
 
 
     function initiateCapture(tab, callback) {
-        chrome.tabs.sendMessage(tab.id, { msg: 'scrollPage', static }, function () {
-            // We're done taking snapshots of all parts of the window. Display
-            // the resulting full screenshot images in a new browser tab.
-            callback();
-        });
+        if (!chrome.runtime.lastError) {
+            chrome.tabs.sendMessage(tab.id, { msg: 'scrollPage', static }, function () {
+                // We're done taking snapshots of all parts of the window. Display
+                // the resulting full screenshot images in a new browser tab.
+                callback();
+            });
+        }
     }
 
 
