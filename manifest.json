@@ -1,5 +1,5 @@
 {
-	"name": "Selection Saver",
+	"name": "AudioScreenCapture",
 	"description": "Testing Version",
 	"version": "4.4",
 	"manifest_version": 3,
@@ -38,7 +38,8 @@
 		"scripting",
 		"tabCapture",
 		"tabs",
-		"downloads"
+		"downloads",
+		"desktopCapture"
 	],
 	"action": {
 		"default_popup": "./popup.html",

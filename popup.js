@@ -55,17 +55,22 @@ document.getElementById("slcRecordings").addEventListener("change", SelectAudio)
 // document.getElementById("txtAudioDescription").addEventListener("input", AudioDescription);
 document.getElementById("txtAudioDescription").addEventListener("input", TextAudioDescription);
 
+document.getElementById('startVideoRecordingBtn').addEventListener('click', VideoRecord);
+
 // document.getElementById("btnMark").addEventListener("click", Mark);
 document.getElementById("btnUploadAudio").addEventListener("click", UploadAudio);
 document.addEventListener('DOMContentLoaded', function () {
 	setTimeout(OnLoad, 0);
 });
 
+document.getElementById("tabVideo").addEventListener("click", () => SelectTab("video"))
 document.getElementById("tabAudio").addEventListener("click", () => SelectTab("audio"))
 document.getElementById("tabText").addEventListener("click", () => SelectTab("text"))
 document.getElementById("btnrecording").addEventListener("click", () => SelectTab("video"))
 
-document.getElementById("options").addEventListener("click", () => { chrome.runtime.openOptionsPage() })
+document.getElementById("options").addEventListener("click", () => {
+	chrome.runtime.openOptionsPage()
+})
 
 const progressBar = document.getElementById('progress-bar-inner');
 const cancelButton = document.getElementById('cancel-button');
@@ -115,7 +120,7 @@ async function OnLoad() {
 		var description = await SessionData?.get("recordingDescription");
 		durations = await SessionData?.get("durations");
 
-		if (description) 
+		if (description)
 			$("#txtAudioDescription").val(description);
 
 		savedRecordings = JSON.parse(savedRecordings);
@@ -158,7 +163,7 @@ async function OnLoad() {
 			$("#btnUploadAudio").removeClass("disabled");
 		});
 	}
-	
+
 	var token = await GetStorage("token");
 	$.ajax({
 		type: "GET",
@@ -373,17 +378,26 @@ const addBgColor = (tab) => {
 	if (tab === "audio") {
 		$("#tabAudio").css("background", "#333")
 		$("#tabText").css("background", "#FFC90E");
+		$("#tabVideo").css("background", "#FFC90E");
+		$("#btnrecording").css("background", "#FFC90E");
+
+	} else if (tab === "video") {
+		$("#tabVideo").css("background", "#333")
+		$("#tabText").css("background", "#FFC90E");
+		$("#tabAudio").css("background", "#FFC90E")
 		$("#btnrecording").css("background", "#FFC90E");
 
 	} else if (tab === "text") {
 		$("#tabText").css("background", "#333");
 		$("#tabAudio").css("background", "#FFC90E");
+		$("#tabVideo").css("background", "#FFC90E");
 		$("#btnrecording").css("background", "#FFC90E");
 
 
 	} else {
 		$("#tabText").css("background", "#FFC90E");
 		$("#tabAudio").css("background", "#FFC90E");
+		$("#tabVideo").css("background", "#FFC90E");
 		$("#btnrecording").css("background", "#333");
 	}
 }
@@ -398,17 +412,20 @@ async function SelectTab(tab) {
 
 	$("#lbl-username").text(`👤 ${localStorage.getItem('loggedUsername')}`)
 	if (tab === "audio") {
-		$("#tabAudio").addClass("active")
-		$("#tabText").removeClass("active")
-
+		$("#tabAudio").addClass("active");
+		$("#tabText").removeClass("active");
+		$("#tabVideo").removeClass("active");
 		// $("#tabsPanel").css("background-image", "linear-gradient(-135deg, #333 70%, #bbb 70%)");
 		// $("#tabSelected").attr("style", "background-image: linear-gradient(-135deg, #FFC90E 70%, #333 70%) !important");
 
 
 		$("#tabAudio").css("color", "#fff");
 		$("#tabText").css("color", "black");
+		$("#tabVideo").css("color", "black");
 		$("#audioPanel").show();
+		$("#videoPanel").hide();
 		$("#articlePanel").hide();
+
 		$("#description").hide();
 
 	} else if (tab === "text") {
@@ -425,12 +442,15 @@ async function SelectTab(tab) {
 
 		$("#articlePanel").show();
 		$("#audioPanel").hide();
+		$("#videoPanel").hide();
+
 		$("#description").show();
 	} else if (tab === "video") {
 		// $("#tabsPanel").css("background-image", "linear-gradient(-135deg, #FFC90E 70%, #bbb 70%)");
 		// $("#tabSelected").attr("style", "background-image: linear-gradient(-135deg, #333 70%, #FFC90E 70%) !important");
 
 		$("#btnrecording").addClass("active")
+		$("#tabVideo").addClass("active")
 		$("#tabAudio").removeClass("active")
 		$("#tabText").removeClass("active")
 
@@ -438,8 +458,10 @@ async function SelectTab(tab) {
 		$("#tabAudio").css("color", "black");
 		$("#btnrecording").css("color", "#fff");
 
+		$("#videoPanel").show();
 		$("#articlePanel").hide();
 		$("#audioPanel").hide();
+
 		$("#description").hide();
 	}
 
@@ -457,7 +479,15 @@ var partSize = 0;
 var parts = [];
 // var comments = [];
 // var recordings = [];
+document.addEventListener('DOMContentLoaded', () => {
+	document.getElementById('startVideoRecordingBtn').addEventListener('click', startRecording);
+});
 
+function VideoRecord() {
+	chrome.runtime.sendMessage({
+		name: 'startVideoRecording'
+	});
+}
 
 async function Record() {
 	chrome.runtime.sendMessage({
@@ -485,9 +515,15 @@ async function deleteAudio() {
 	comments.splice(audioIndex, 1);
 	durations.splice(audioIndex, 1);
 
-	await chrome.storage.session.set({ "recordings": JSON.stringify(recordings) });
-	await chrome.storage.session?.set({ "durations": JSON.stringify(durations) });
-	await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
+	await chrome.storage.session.set({
+		"recordings": JSON.stringify(recordings)
+	});
+	await chrome.storage.session?.set({
+		"durations": JSON.stringify(durations)
+	});
+	await chrome.storage.session?.set({
+		"comments": JSON.stringify(comments)
+	});
 
 	$("#slcRecordings option").eq(audioIndex).remove();
 
@@ -534,7 +570,9 @@ async function editComment() {
 		commentContainer.find(".comment-text").text(editedCommentText);
 		comments[commentIndex] = editedCommentText;
 
-		await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
+		await chrome.storage.session?.set({
+			"comments": JSON.stringify(comments)
+		});
 
 		const selectedTab = localStorage.getItem("tab");
 
@@ -599,8 +637,12 @@ async function Stop() {
 	comments[comments.length] = comment;
 	durations?.push(duration);
 
-	await chrome.storage.session?.set({ "comments": JSON.stringify(comments) });
-	await chrome.storage.session?.set({ "durations": JSON.stringify(durations) });
+	await chrome.storage.session?.set({
+		"comments": JSON.stringify(comments)
+	});
+	await chrome.storage.session?.set({
+		"durations": JSON.stringify(durations)
+	});
 
 	display();
 }
@@ -748,7 +790,9 @@ async function UploadAudio() {
 			$("#slcRecordings").html("");
 			await SessionData?.set("recordingDescription", "");
 			await SessionData?.set("recordings", []);
-			await chrome.storage.session?.set({ "durations": '[]' });
+			await chrome.storage.session?.set({
+				"durations": '[]'
+			});
 			setTimeout(() => $("#btnUploadAudio").text("Upload"), 2000);
 			localStorage.removeItem("texAudio");
 
@@ -761,9 +805,13 @@ async function UploadAudio() {
 			chrome.storage.session.remove("recordings");
 
 			// localStorage.removeItem("comments");
-			await chrome.storage.session?.set({ "comments": '[]' });
+			await chrome.storage.session?.set({
+				"comments": '[]'
+			});
 			localStorage.removeItem("recordings");
-			await chrome.storage.session?.set({ "durations": '[]' });
+			await chrome.storage.session?.set({
+				"durations": '[]'
+			});
 
 			// Reset the audio element's "muted" attribute
 			// const audioElement = document.getElementById("yourAudioElementId");
@@ -2147,7 +2195,7 @@ window.Capture = (function () {
 // 	duration = 0;
 // };
 
-////////////////////////////////////////
+// //////////////////////////////////////
 // ///////////
 
 // async function mergeBase64Audio(base64Audio1, base64Audio2) {

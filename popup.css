@@ -150,6 +150,23 @@ ul#tabsPanel li.active:after {
   height: 15px;
   /* display: none; */
 }
+
+#videoPanel {
+  display: none;
+  width: 400px;
+  background-color: #333;
+  text-align: center;
+  top: 0px;
+  left: 0px;
+}
+#startVideoRecordingBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  padding: 20px;
+  margin-left: 120px;
+}
 /* record */
 .btnMedia {
   width: 40px;
