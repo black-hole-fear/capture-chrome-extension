@@ -1,10 +1,10 @@
 // const API_URL = "http://localhost:5000/api";
 // const WEBSITE_URL = "http://localhost:3000";
 
-const API_URL = "http://alpha.yourarchiv.com/api";
-const WEBSITE_URL = "http://alpha.yourarchiv.com";
-// const API_URL = "http://yourarchiv.com/api";
-// const WEBSITE_URL = "http://yourarchiv.com";
+// const API_URL = "http://alpha.yourarchiv.com/api";
+// const WEBSITE_URL = "http://alpha.yourarchiv.com";
+const API_URL = "http://yourarchiv.com/api";
+const WEBSITE_URL = "http://yourarchiv.com";
 
 const progressBar = document.getElementById('progress-bar-inner');
 const cancelButton = document.getElementById('cancel-button');

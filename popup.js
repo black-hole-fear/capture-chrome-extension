@@ -7,11 +7,11 @@ const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice
 var quality = 90;
 var selections;
 
-const API_URL = "http://alpha.yourarchiv.com/api";
-const WEBSITE_URL = "http://alpha.yourarchiv.com";
+// const API_URL = "http://alpha.yourarchiv.com/api";
+// const WEBSITE_URL = "http://alpha.yourarchiv.com";
 
-// const API_URL = "http://yourarchiv.com/api";
-// const WEBSITE_URL = "http://yourarchiv.com";
+const API_URL = "https://yourarchiv.com/api";
+const WEBSITE_URL = "https://yourarchiv.com";
 
 // const API_URL = "http://localhost:5000/api";
 // const WEBSITE_URL = "http://localhost:3000";
@@ -55,12 +55,16 @@ document.getElementById("slcRecordings").addEventListener("change", SelectAudio)
 // document.getElementById("txtAudioDescription").addEventListener("input", AudioDescription);
 document.getElementById("txtAudioDescription").addEventListener("input", TextAudioDescription);
 
-document.getElementById('startVideoRecordingBtn').addEventListener('click', VideoRecord);
+// document.getElementById('startVideoRecordingBtn').addEventListener('click', VideoRecord);
 
 // document.getElementById("btnMark").addEventListener("click", Mark);
 document.getElementById("btnUploadAudio").addEventListener("click", UploadAudio);
 document.addEventListener('DOMContentLoaded', function () {
 	setTimeout(OnLoad, 0);
+	// document.getElementById('startVideoRecordingBtn').addEventListener('click', VideoRecord);
+	$(".startVideoRecordingBtn").on("click", () => {
+		VideoRecord();
+	});
 });
 
 document.getElementById("tabVideo").addEventListener("click", () => SelectTab("video"))
@@ -110,18 +114,17 @@ async function OnLoad() {
 	};
 
 
-	comments = await SessionData?.get("comments") ?? [];
-	durations = await SessionData?.get("durations") ?? [];
+	comments = (await chrome.storage.session?.get()).comments ?? [];
+	if (comments.length !== 0) {
+		comments = JSON.parse(comments);
+	} 
+	durations = (await chrome.storage.session?.get()).durations ?? [];
+	if (durations.length !== 0) {
+		durations = JSON.parse(durations);
+	}
 	savedRecordings = (await chrome.storage.session?.get()).recordings;
 
-	console.log("savedRecordings: ", savedRecordings ? JSON.parse(savedRecordings) : null);
-
 	if (savedRecordings?.length > 0) {
-		var description = await SessionData?.get("recordingDescription");
-		durations = await SessionData?.get("durations");
-
-		if (description)
-			$("#txtAudioDescription").val(description);
 
 		savedRecordings = JSON.parse(savedRecordings);
 
@@ -220,7 +223,7 @@ async function OnLoad() {
 	$("#title").val(meta.title);
 
 	var date = await SessionData.get("date");
-	var title = await SessionData.get("title");
+	var title = (await chrome.storage.session?.get()).title;
 	var description = await SessionData.get("description");
 	var color = await SessionData.get("color");
 	var saved = await SessionData.get("saved");
@@ -366,13 +369,16 @@ function AudioPanel() {
 	$("#home").hide();
 }
 
-var btnrecording = document.getElementById('btnrecording')
+// var btnrecording = document.getElementById('btnrecording')
 
-btnrecording.addEventListener('click', async function () {
+// btnrecording.addEventListener('click', async function () {
+// 	const url = `/videorec.html?login=${btoa(username + ":" + password)}&user=${username}`;
+// 	window.open(url, 'popup', 'width=800,height=600,scrollbars=yes,resizable=yes')
+// })
+$("body").on('click', '#btnrecording', async () => {
 	const url = `/videorec.html?login=${btoa(username + ":" + password)}&user=${username}`;
-	window.open(url, 'popup', 'width=800,height=600,scrollbars=yes,resizable=yes')
-})
-
+		window.open(url, 'popup', 'width=800,height=600,scrollbars=yes,resizable=yes');
+});
 
 const addBgColor = (tab) => {
 	if (tab === "audio") {
@@ -479,9 +485,7 @@ var partSize = 0;
 var parts = [];
 // var comments = [];
 // var recordings = [];
-document.addEventListener('DOMContentLoaded', () => {
-	document.getElementById('startVideoRecordingBtn').addEventListener('click', startRecording);
-});
+
 
 function VideoRecord() {
 	chrome.runtime.sendMessage({
@@ -628,14 +632,16 @@ async function Stop() {
 		type: 'AUDIO_STOP'
 	});
 
-	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
-	$("#btnRecord").removeClass("disabled");
 
-	$("#lblRecordTime").text("00:00:00");
-	$("#record-animation2").removeClass("play");
+	comments = (await chrome.storage.session?.get()).comments ?? [];
+	if (comments.length !== 0) 
+		comments = JSON.parse(comments);
+	durations = (await chrome.storage.session?.get()).durations ?? [];
+	if (durations.length !== 0)
+		durations = JSON.parse(durations);
 
 	comments[comments.length] = comment;
-	durations?.push(duration);
+	durations[durations.length] = duration;
 
 	await chrome.storage.session?.set({
 		"comments": JSON.stringify(comments)
@@ -647,16 +653,15 @@ async function Stop() {
 	display();
 }
 
-function display() {
+async function display() {
 	var minutes = Math.floor(durations[durations?.length - 1] / 60);
 	var seconds = durations[durations?.length - 1] % 60;
 
 	var formattedDuration = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
 	var comment = comments[comments.length - 1];
-
 	function breakTextIntoLines(text, maxLength) {
-		let lines = "";
+		let lines = ``;
 		for (let i = 0; i < text.length; i += maxLength) {
 			lines += text.substr(i, maxLength);
 		}
@@ -674,6 +679,13 @@ function display() {
 
 	$("#slcRecordings")?.append(audio);
 	$("#btnUploadAudio").removeClass("disabled");
+
+	
+	$("#btnPause, #btnStop, #btnMark").addClass("disabled");
+	$("#btnRecord").removeClass("disabled");
+
+	$("#lblRecordTime").text("00:00:00");
+	$("#record-animation2").removeClass("play");
 }
 
 async function SelectAudio() {
@@ -788,7 +800,7 @@ async function UploadAudio() {
 			recordings = [];
 			$("#btnUploadAudio").text("Audio saved");
 			$("#slcRecordings").html("");
-			await SessionData?.set("recordingDescription", "");
+			await chrome.storage.session?.remove("recordingDescription");
 			await SessionData?.set("recordings", []);
 			await chrome.storage.session?.set({
 				"durations": '[]'
@@ -1004,7 +1016,7 @@ async function GetMeta() {
 				for (var x of metas)
 					if (x.getAttribute("property")) {
 						if (x.getAttribute("property").includes("title"))
-							title = x.getAttribute("content");
+							title = x.getAttribute("content") ?? "";
 						else if (x.getAttribute("property").includes("date"))
 							date = x.getAttribute("content");
 					}
@@ -1060,7 +1072,7 @@ var SessionData = (function () {
 					return window.SessionData[key];
 				}
 			}, function (response) {
-				resolve(response[0]?.result);
+				resolve(response[0]);
 			});
 		});
 		var data = await p;
@@ -1139,7 +1151,7 @@ var SessionData = (function () {
 
 
 async function UpdateTitle() {
-	await SessionData?.set("title", $("#title").val());
+	await chrome.storage.session?.set({ "title": $("#title").val()});
 }
 
 

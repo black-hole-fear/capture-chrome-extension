@@ -159,13 +159,14 @@ ul#tabsPanel li.active:after {
   top: 0px;
   left: 0px;
 }
-#startVideoRecordingBtn {
+.startVideoRecordingBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: max-content;
   padding: 20px;
   margin-left: 120px;
+  color: #FFF !important;
 }
 /* record */
 .btnMedia {
